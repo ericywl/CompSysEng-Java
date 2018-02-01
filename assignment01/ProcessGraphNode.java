@@ -12,36 +12,36 @@ public class ProcessGraphNode {
     private String command;
     private boolean runnable;
     private boolean executed;
-    private boolean running;
+    private boolean done;
 
     public ProcessGraphNode(int nodeId) {
         this.nodeId = nodeId;
         this.runnable = false;
         this.executed = false;
-        this.running = false;
+        this.done = false;
     }
 
-    // check if all parents have finished execution ie. cleared dependencies
-    public synchronized boolean allParentsExecuted() {
+    // check if all parent nodes are done ie. current node cleared dependencies
+    public synchronized boolean allParentsDone() {
         for (ProcessGraphNode parent : this.getParents()) {
-            if (!parent.isExecuted())
+            if (!parent.isDone())
                 return false;
         }
 
         return true;
     }
 
-    // setting a process to run would disable it from being runnable
-    public void setRunning() {
-        this.running = true;
+    // setting a process to executed would disable it from being runnable
+    public void setExecuted() {
+        this.executed = true;
         this.runnable = false;
     }
 
-    // setting a process to executed would stop it from running
-    // and disable it from being runnable
-    public void setExecuted() {
+    // setting a process to done would disable it from being runnable
+    // also sets executed to true just in case
+    public void setDone() {
+        this.done = true;
         this.executed = true;
-        this.running = false;
         this.runnable = false;
     }
 
@@ -53,12 +53,12 @@ public class ProcessGraphNode {
         return runnable;
     }
 
-    public boolean isExecuted() {
-        return executed;
+    public boolean isDone() {
+        return done;
     }
 
-    public boolean isRunning() {
-        return running;
+    public boolean isExecuted() {
+        return executed;
     }
 
     public void addChild(ProcessGraphNode child) {

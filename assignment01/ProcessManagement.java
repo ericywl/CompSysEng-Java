@@ -9,50 +9,56 @@ import java.util.*;
 
 public class ProcessManagement {
     // set the working directory
-    private static File currentDirectory = new File("/Users/ericyap/Desktop/test_folder/test1");
+    private static File workingDirectory = new File("/Users/ericyap/Desktop/test_folder/test1");
     // set the instructions file
     private static File instructionSet = new File("test1.txt");
     // set thread sleep duration (for concurrency testing)
     private static long sleepDuration = 1000;
+    // mapping between all nodes and their respective threads
+    private static Map<ProcessGraphNode, ProcessThread> threadsMap = new HashMap<>();
 
-    private static Map<ProcessGraphNode, ProcessThread> runningThreads = new HashMap<>();
-    public static Object lock = new Object();
-
-    public static void main(String[] args) throws InterruptedException {
+    public static void main(String[] args) {
         // parse the instruction file and construct a data structure, stored inside ProcessGraph class
-        ParseFile.generateGraph(new File(currentDirectory + "/" + instructionSet));
+        ParseFile.generateGraph(new File(workingDirectory + "/" + instructionSet));
+
         // print the graph
         ProcessGraph.printGraph();
         // ProcessGraph.printBasic();
+
+        initThreads();
         manageProcess();
+    }
+
+    private static void initThreads() {
+        try {
+            for (ProcessGraphNode node : ProcessGraph.nodes.values())
+                threadsMap.put(node, new ProcessThread(node, workingDirectory, sleepDuration));
+            for (ProcessThread pThread : threadsMap.values())
+                pThread.join();
+
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 
     private static void manageProcess() {
         // while all nodes have not finished execution
-        while (!allNodesExecuted()) {
-            // check for running threads that just finished
-            for (ProcessGraphNode runningNode : runningThreads.keySet()) {
-                ProcessThread pThread = runningThreads.get(runningNode);
-                if (pThread.isFinished()) {
-                    try {
-                        pThread.join();
-                        runningNode.setExecuted();
-                    } catch (InterruptedException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }
+        while (!allNodesFinished()) {
+            for (ProcessGraphNode node : threadsMap.keySet()) {
+                ProcessThread pThread = threadsMap.get(node);
+                // set node to done if thread finished
+                if (pThread.isFinished())
+                    node.setDone();
 
-            for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
-                if (node.allParentsExecuted() & !node.isRunning() & !node.isExecuted()) {
+                // set node to runnable if all parents finished execution
+                // and node not already executed or is done
+                if (node.allParentsDone() & !node.isExecuted() & !node.isDone())
                     node.setRunnable();
-                }
 
+                // start the thread and set node to executed if it is runnable
                 if (node.isRunnable()) {
-                    ProcessThread pThread = new ProcessThread(node, currentDirectory, sleepDuration);
                     pThread.start();
-                    node.setRunning();
-                    runningThreads.put(node, pThread);
+                    node.setExecuted();
                 }
             }
         }
@@ -61,9 +67,9 @@ public class ProcessManagement {
     }
 
     // check if all nodes have finished execution
-    private static boolean allNodesExecuted() {
+    private static boolean allNodesFinished() {
         for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
-            if (!node.isExecuted())
+            if (!node.isDone())
                 return false;
         }
 

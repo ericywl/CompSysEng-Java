@@ -9,16 +9,22 @@ public class ProcessThread extends Thread {
     private ProcessBuilder pb = new ProcessBuilder();
     private boolean finished = false;
 
-    public ProcessThread(ProcessGraphNode node, File workingDir, long sleepDuration) {
+    public ProcessThread(ProcessGraphNode node, File workingDir,
+                         long sleepDuration) {
         this.node = node;
         this.sleepDuration = sleepDuration;
 
         // set the command and directory of ProcessBuilder
         pb.command(node.getCommand().split(" "));
         pb.directory(workingDir);
+
         // redirect the error stream to stdout
         pb.redirectErrorStream(true);
+        // redirect the input and output of the process
+        redirectIO();
+    }
 
+    private void redirectIO() {
         // redirect input for non-stdin
         if (!node.getInputFile().toString().equalsIgnoreCase("stdin")) {
             File input = new File(pb.directory().getAbsolutePath() + "/" + node.getInputFile());

@@ -32,7 +32,7 @@ public class ProcessGraph {
                 System.out.print("\nInput File: " + node.getInputFile() + "    ");
                 System.out.println("\nOutput File: " + node.getOutputFile() + "    ");
                 System.out.println("Runnable: " + node.isRunnable());
-                System.out.println("Executed: " + node.isExecuted());
+                System.out.println("Executed: " + node.isDone());
                 System.out.println("\n");
             }
         } catch (Exception e) {
@@ -45,7 +45,7 @@ public class ProcessGraph {
         System.out.println("Basic info:");
         for (ProcessGraphNode node : nodes.values()) {
             System.out.println("Node: " + node.getNodeId() + " Runnable: " + node.isRunnable()
-                    + " Executed: " + node.isExecuted());
+                    + " Executed: " + node.isDone());
         }
     }
 
