@@ -9,9 +9,9 @@ import java.util.*;
 
 public class ProcessManagement {
     // set the working directory
-    private static File workingDirectory = new File("/Users/ericyap/Desktop/test_folder/test1");
+    private static File workingDirectory = new File("/Users/ericyap/Desktop/test_folder/test3");
     // set the instructions file
-    private static File instructionSet = new File("test1.txt");
+    private static File instructionSet = new File("test3.txt");
     // set thread sleep duration (for concurrency testing)
     private static long sleepDuration = 1000;
     // mapping between all nodes and their respective threads
@@ -29,6 +29,7 @@ public class ProcessManagement {
         manageProcess();
     }
 
+    // initialize all the threads and create the node-thread mapping
     private static void initThreads() {
         try {
             for (ProcessGraphNode node : ProcessGraph.nodes.values())
@@ -41,8 +42,8 @@ public class ProcessManagement {
         }
     }
 
+    // schedule the processes while all nodes are not done executing
     private static void manageProcess() {
-        // while all nodes have not finished execution
         while (!allNodesFinished()) {
             for (ProcessGraphNode node : threadsMap.keySet()) {
                 ProcessThread pThread = threadsMap.get(node);
