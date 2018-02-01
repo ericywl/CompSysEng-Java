@@ -22,16 +22,15 @@ public class ProcessManagement {
         // parse the instruction file and construct a data structure, stored inside ProcessGraph class
         ParseFile.generateGraph(new File(currentDirectory + "/" + instructionSet));
         // print the graph
-        // ProcessGraph.printGraph();
-        ProcessGraph.printBasic();
+        ProcessGraph.printGraph();
+        // ProcessGraph.printBasic();
         manageProcess();
     }
 
     private static void manageProcess() {
-        // Using index of ProcessGraph, loop through each ProcessGraphNode, to check whether it is ready to run
-        // check if all the nodes are executed
-        // WRITE YOUR CODE
+        // while all nodes have not finished execution
         while (!allNodesExecuted()) {
+            // check for running threads that just finished
             for (ProcessGraphNode runningNode : runningThreads.keySet()) {
                 ProcessThread pThread = runningThreads.get(runningNode);
                 if (pThread.isFinished()) {
@@ -61,6 +60,7 @@ public class ProcessManagement {
         System.out.println("All processes finished successfully.");
     }
 
+    // check if all nodes have finished execution
     private static boolean allNodesExecuted() {
         for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
             if (!node.isExecuted())

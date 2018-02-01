@@ -5,9 +5,9 @@ public class ProcessGraph {
     // Map of index to ProcessGraphNode, contains all the nodes in the graph
     public static Map<Integer, ProcessGraphNode> nodes = new HashMap<>();
 
-    // add node if not yet created
+    // add node to graph if not yet created
     public static void addNode(int index) {
-        nodes.put(index, new ProcessGraphNode(index));
+        nodes.putIfAbsent(index, new ProcessGraphNode(index));
     }
 
     // print the information of ProcessGraph
