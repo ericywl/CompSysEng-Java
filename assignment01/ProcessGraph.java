@@ -1,9 +1,8 @@
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 
 public class ProcessGraph {
-    // static ArrayList of ProcessGraphNode containing all the node of the graph
+    // Map of index to ProcessGraphNode, contains all the nodes in the graph
     public static Map<Integer, ProcessGraphNode> nodes = new HashMap<>();
 
     // add node if not yet created

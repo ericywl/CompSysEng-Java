@@ -2,9 +2,8 @@ import java.io.File;
 import java.util.ArrayList;
 
 public class ProcessGraphNode {
-    // pointers to all the parents
+    // pointers to all the parents and children
     private ArrayList<ProcessGraphNode> parents = new ArrayList<>();
-    // pointers to all the children
     private ArrayList<ProcessGraphNode> children = new ArrayList<>();
     // properties of ProcessGraphNode
     private int nodeId;
@@ -22,18 +21,32 @@ public class ProcessGraphNode {
         this.running = false;
     }
 
+    // check if all parents have finished execution ie. cleared dependencies
+    public synchronized boolean allParentsExecuted() {
+        for (ProcessGraphNode parent : this.getParents()) {
+            if (!parent.isExecuted())
+                return false;
+        }
+
+        return true;
+    }
+
+    // setting a process to run would disable it from being runnable
     public void setRunning() {
         this.running = true;
         this.runnable = false;
     }
 
-    public void setRunnable() {
-        this.runnable = true;
-    }
-
+    // setting a process to executed would stop it from running
+    // and disable it from being runnable
     public void setExecuted() {
         this.executed = true;
         this.running = false;
+        this.runnable = false;
+    }
+
+    public void setRunnable() {
+        this.runnable = true;
     }
 
     public boolean isRunnable() {
@@ -94,14 +107,5 @@ public class ProcessGraphNode {
 
     public int getNodeId() {
         return nodeId;
-    }
-
-    public synchronized boolean allParentsExecuted() {
-        for (ProcessGraphNode parent : this.getParents()) {
-            if (!parent.isExecuted())
-                return false;
-        }
-
-        return true;
     }
 }
