@@ -20,17 +20,18 @@ public class ProcessThread extends Thread {
 
         // redirect the error stream to stdout
         pb.redirectErrorStream(true);
+
         // redirect the input and output of the process
-        redirectIO(commandArr[0]);
+        if (!commandArr[0].equalsIgnoreCase("ls") && !commandArr[0].equalsIgnoreCase("ps")) {
+            redirectIO();
+        }
     }
 
-    private void redirectIO(String command) {
+    private void redirectIO() {
         // redirect input for non-stdin
-        if (!command.equalsIgnoreCase("ls") && !command.equalsIgnoreCase("ps")) {
-            if (!node.getInputFile().toString().equalsIgnoreCase("stdin")) {
-                File input = new File(pb.directory().getAbsolutePath() + "/" + node.getInputFile());
-                pb.redirectInput(input);
-            }
+        if (!node.getInputFile().toString().equalsIgnoreCase("stdin")) {
+            File input = new File(pb.directory().getAbsolutePath() + "/" + node.getInputFile());
+            pb.redirectInput(input);
         }
 
         // redirect output for non-stdout
