@@ -2,6 +2,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.concurrent.TimeUnit;
 
 public class ProcessThread extends Thread {
     private ProcessGraphNode node;
@@ -20,11 +21,7 @@ public class ProcessThread extends Thread {
 
         // redirect the error stream to stdout
         pb.redirectErrorStream(true);
-
-        // redirect the input and output of the process
-        if (!commandArr[0].equalsIgnoreCase("ls") && !commandArr[0].equalsIgnoreCase("ps")) {
-            redirectIO();
-        }
+        redirectIO();
     }
 
     private void redirectIO() {
@@ -52,10 +49,13 @@ public class ProcessThread extends Thread {
 
             // print finish status and set finished to true
             System.out.println("Process " + node.getNodeId() + " has finished execution.");
-            finished = true;
 
         } catch (IOException | InterruptedException ex) {
+            // print any error messages
             System.out.println(ex.getMessage());
+            System.out.println("Process " + node.getNodeId() + " exited with an error.");
+        } finally {
+            finished = true;
         }
     }
 
