@@ -26,7 +26,7 @@ public class ProcessManagement {
         // ProcessGraph.printBasic();
 
         initThreads();
-        manageProcess();
+        manageThreads();
     }
 
     // initialize all the threads and create the node-thread mapping
@@ -43,7 +43,7 @@ public class ProcessManagement {
     }
 
     // schedule the processes while all nodes are not done executing
-    private static void manageProcess() {
+    private static void manageThreads() {
         while (!allNodesFinished()) {
             for (ProcessGraphNode node : threadsMap.keySet()) {
                 ProcessThread pThread = threadsMap.get(node);
