@@ -20,26 +20,14 @@ public class ProcessManagement {
     public static void main(String[] args) {
         // parse the instruction file and construct a data structure, stored inside ProcessGraph class
         ParseFile.generateGraph(new File(workingDirectory + "/" + instructionSet));
-
         // print the graph
         ProcessGraph.printGraph();
         // ProcessGraph.printBasic();
 
-        initThreads();
+        for (ProcessGraphNode node : ProcessGraph.nodes.values())
+            threadsMap.put(node, new ProcessThread(node, workingDirectory, sleepDuration));
+
         manageThreads();
-    }
-
-    // initialize all the threads and create the node-thread mapping
-    private static void initThreads() {
-        try {
-            for (ProcessGraphNode node : ProcessGraph.nodes.values())
-                threadsMap.put(node, new ProcessThread(node, workingDirectory, sleepDuration));
-            for (ProcessThread pThread : threadsMap.values())
-                pThread.join();
-
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     // schedule the processes while all nodes are not done executing
@@ -48,8 +36,14 @@ public class ProcessManagement {
             for (ProcessGraphNode node : threadsMap.keySet()) {
                 ProcessThread pThread = threadsMap.get(node);
                 // set node to done if thread finished
-                if (pThread.isFinished())
+                if (pThread.isFinished()) {
+                    try {
+                        pThread.join();
+                    } catch (InterruptedException ex) {
+                        ex.printStackTrace();
+                    }
                     node.setDone();
+                }
 
                 // set node to runnable if all parents finished execution
                 // and node not already executed or is done
