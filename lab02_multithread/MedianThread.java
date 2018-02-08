@@ -10,7 +10,8 @@ public class MedianThread {
         // get input file path and number of threads from the command line arguments
         File inputFile = new File(args[0]);
         int numOfThreads = Integer.valueOf(args[1]);
-        List<List<Integer>> subArrList = Parser.createSubArrays(inputFile, numOfThreads);
+        List<Integer> array = Parser.parseFile(inputFile);
+        List<List<Integer>> subArrList = Parser.createSubArrays(array, numOfThreads);
 
         List<MedianMultiThread> mmtList = new ArrayList<>();
         for (List<Integer> subArr : subArrList) {
@@ -20,27 +21,19 @@ public class MedianThread {
         }
 
         for (MedianMultiThread mmt : mmtList) {
-
+            mmt.join();
         }
-
-        // TODO: use any merge algorithm to merge the sorted subarrays and store it to another array, e.g., sortedFullArray.
-
-        //TODO: get median from sortedFullArray
-
-        //e.g, computeMedian(sortedFullArray);
-
-        // TODO: stop recording time and compute the elapsed time
-
-        // TODO: printout the final sorted array
-
-        // TODO: printout median
-        System.out.println("The Median value is ...");
-
     }
 
-    private static double computeMedian(ArrayList<Integer> inputArray) {
-        //TODO: implement your function that computes median of values of an array
-        return 0;
+    private static double computeMedian(List<Integer> numList) {
+        int size = numList.size();
+        if (size % 2 != 0) {
+            return numList.get(size / 2);
+        }
+
+        int midRight = size / 2;
+        int sum = numList.get(midRight) + numList.get(midRight - 1);
+        return sum / 2.0;
     }
 
 }

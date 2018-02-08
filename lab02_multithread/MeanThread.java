@@ -13,35 +13,50 @@ public class MeanThread {
         // get input file path and number of threads from the command line arguments
         File inputFile = new File(args[0]);
         int numOfThreads = Integer.valueOf(args[1]);
-        List<List<Integer>> subArrList = Parser.createSubArrays(inputFile, numOfThreads);
+        // parse the input file to get an array of integers
+        List<Integer> array = Parser.parseFile(inputFile);
 
+        // if number of threads is less than 1 (invalid)
+        if (numOfThreads < 1) {
+            System.out.println("Invalid argument");
+            return;
+        }
         // record starting time
         long startTime = System.nanoTime();
+        double globalSum, globalMean;
 
-        // create and start the threads
-        List<MeanMultiThread> mmtList = new ArrayList<>();
-        for (List<Integer> subArr : subArrList) {
-            MeanMultiThread mmt = new MeanMultiThread(subArr);
-            mmt.start();
-            mmtList.add(mmt);
-        }
+        if (numOfThreads == 1) {
+            globalSum = array.stream().mapToInt(Integer::intValue).sum();
+            globalMean = globalSum / numOfThreads;
 
-        // join the threads to main and add to temporary mean list
-        List<Double> temporalMeans = new ArrayList<>();
-        for (int i = 0; i < mmtList.size(); i++) {
-            MeanMultiThread mmt = mmtList.get(i);
-            try {
-                mmt.join();
-            } catch (InterruptedException e) {
-                e.printStackTrace();
+        } else {
+            // split array into sub-arrays
+            List<List<Integer>> subArrList = Parser.createSubArrays(array, numOfThreads);
+            // create and start the threads
+            List<MeanMultiThread> mmtList = new ArrayList<>();
+            for (List<Integer> subArr : subArrList) {
+                MeanMultiThread mmt = new MeanMultiThread(subArr);
+                mmt.start();
+                mmtList.add(mmt);
             }
-            // print out temporal mean of each thread
-            temporalMeans.add(mmt.getMean());
-            System.out.println("Temporal mean value of thread " + (i + 1) + " is " + mmt.getMean() + ".");
+
+            // join the threads to main and add to temporary mean list
+            List<Double> temporalMeans = new ArrayList<>();
+            for (int i = 0; i < mmtList.size(); i++) {
+                MeanMultiThread mmt = mmtList.get(i);
+                try {
+                    mmt.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+                // print out temporal mean of each thread
+                temporalMeans.add(mmt.getMean());
+                System.out.println("Temporal mean value of thread " + (i + 1) + " is " + mmt.getMean() + ".");
+            }
+            // compute global mean
+            globalSum = temporalMeans.stream().mapToDouble(Double::doubleValue).sum();
+            globalMean = globalSum / numOfThreads;
         }
-        // compute global mean
-        double globalSum = temporalMeans.stream().mapToDouble(Double::doubleValue).sum();
-        double globalMean = globalSum / numOfThreads;
 
         // record ending time and compute total time elapsed
         long endTime = System.nanoTime();

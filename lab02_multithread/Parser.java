@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Parser {
-    public static List<List<Integer>> createSubArrays(File inputFile, int numOfThreads) {
+    public static List<Integer> parseFile(File inputFile) {
         // parse input file into an array of integers
         List<Integer> array = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(inputFile))) {
@@ -22,6 +22,10 @@ public class Parser {
             e.printStackTrace();
         }
 
+        return array;
+    }
+
+    public static List<List<Integer>> createSubArrays(List<Integer> array, int numOfThreads) {
         // split the huge array of integers into sub arrays
         List<List<Integer>> subArrList = new ArrayList<>();
         int arraySize = array.size();
