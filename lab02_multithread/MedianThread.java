@@ -1,7 +1,7 @@
-import java.io.File;
-import java.io.FileNotFoundException;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 import java.util.Scanner;
 
 
@@ -45,12 +45,12 @@ public class MedianThread {
 
         // TODO: printout median
         System.out.println("The Median value is ...");
-        System.out.println("Running time is " + runningTime + " milliseconds\n");
 
     }
 
-    public static double computeMedian(ArrayList<Integer> inputArray) {
+    private static double computeMedian(ArrayList<Integer> inputArray) {
         //TODO: implement your function that computes median of values of an array
+        return 0;
     }
 
 }
@@ -70,7 +70,6 @@ class MedianMultiThread extends Thread {
     public void run() {
         // called by object.start()
         mergeSort(list);
-
     }
 
     // TODO: implement merge sort here, recursive algorithm

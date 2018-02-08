@@ -13,7 +13,7 @@ public class MeanThread {
         // get input file path and number of threads from the command line arguments
         File inputFile = new File(args[0]);
         int numOfThreads = Integer.valueOf(args[1]);
-        List<List<Integer>> subArrList = createSubArrays(inputFile, numOfThreads);
+        List<List<Integer>> subArrList = Parser.createSubArrays(inputFile, numOfThreads);
 
         // record starting time
         long startTime = System.nanoTime();
@@ -49,34 +49,6 @@ public class MeanThread {
         // print out global mean and elapsed time
         System.out.println("\nThe global mean value is " + globalMean + ".");
         System.out.println("Total time taken: " + elapsedTime + "s");
-    }
-
-    private static List<List<Integer>> createSubArrays(File inputFile, int numOfThreads) {
-        // parse input file into an array of integers
-        List<Integer> array = new ArrayList<>();
-        try (BufferedReader br = new BufferedReader(new FileReader(inputFile))) {
-            String line;
-            while ((line = br.readLine()) != null) {
-                for (String numStr : line.split(" ")) {
-                    if (!numStr.isEmpty())
-                        array.add(Integer.valueOf(numStr.trim()));
-                }
-            }
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        // split the huge array of integers into sub arrays
-        List<List<Integer>> subArrList = new ArrayList<>();
-        int arraySize = array.size();
-        int subArrLen = (numOfThreads == 1) ? arraySize : (arraySize / numOfThreads) + 1;
-        for (int i = 0; i < numOfThreads; i++) {
-            List<Integer> tempList = array.subList(i * subArrLen, Math.min((i + 1) * subArrLen, arraySize));
-            subArrList.add(tempList);
-        }
-
-        return subArrList;
     }
 }
 
