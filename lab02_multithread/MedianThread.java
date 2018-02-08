@@ -9,7 +9,6 @@ public class MedianThread {
         // get input file path and number of threads from the command line arguments
         File inputFile = new File(args[0]);
         int numOfThreads = Integer.valueOf(args[1]);
-        boolean enableMultiMerge = (args.length < 3) ? false : Boolean.valueOf(args[2]);
         List<Integer> array = Parser.parseFile(inputFile);
         List<List<Integer>> subArrList = Parser.createSubArrays(array, numOfThreads);
 
@@ -37,17 +36,12 @@ public class MedianThread {
 
             // join the sorting threads to mean and added the sorted sub-lists to another list
             List<List<Integer>> sortedSubArrList = new ArrayList<>();
-            for (SortThread mmt : mmtList) {
-                mmt.join();
-                sortedSubArrList.add(mmt.getInternal());
+            for (SortThread sortThread : mmtList) {
+                sortThread.join();
+                sortedSubArrList.add(sortThread.getInternal());
             }
-
-            // merge the sorted sub-lists
-            if (enableMultiMerge) {
-                sortedFullArr = multiMerge(sortedSubArrList);
-            } else {
-                sortedFullArr = singleMerge(sortedSubArrList);
-            }
+            // use multi-threading to merge sorted list
+            sortedFullArr = multiMerge(sortedSubArrList);
         }
         // get the median of a sorted list
         double globalMedian = computeMedian(sortedFullArr);
@@ -75,31 +69,19 @@ public class MedianThread {
         return sum / 2.0;
     }
 
-    // use a single thread to merge all sorted lists
-    private static List<Integer> singleMerge(List<List<Integer>> sortedSubArrList) {
-        List<Integer> array = new ArrayList<>();
-        for (List<Integer> sortedSubArr : sortedSubArrList) {
-            array.addAll(sortedSubArr);
-        }
-
-        Collections.sort(array);
-        return array;
-    }
-
-    // use multi-threading to merge all sorted lists
     private static List<Integer> multiMerge(List<List<Integer>> sortedSubArrList) throws InterruptedException {
         while (sortedSubArrList.size() != 1) {
             List<MergeThread> mtList = new ArrayList<>();
             int len = sortedSubArrList.size();
             // create and start the merge threads
-            for (int i = len - 2; i > -1; i -= 2) {
-                MergeThread mt = new MergeThread(sortedSubArrList.get(i), sortedSubArrList.get(i + 1));
-                mt.start();
-                mtList.add(mt);
+            for (int i = 1; i < len; i += 2) {
+                MergeThread mergeThread = new MergeThread(sortedSubArrList.get(i), sortedSubArrList.get(i - 1));
+                mergeThread.start();
+                mtList.add(mergeThread);
             }
 
             // add the 0th array first in the case of odd list size
-            List<Integer> tempList = sortedSubArrList.get(0);
+            List<Integer> tempList = sortedSubArrList.get(len - 1);
             sortedSubArrList = new ArrayList<>();
             if (len % 2 != 0) {
                 sortedSubArrList.add(tempList);
@@ -130,7 +112,8 @@ class SortThread extends Thread {
 
     @Override
     public void run() {
-        Collections.sort(numList);
+        // use merge sort to sort the individual lists
+        numList = SortAlgo.mergeSort(numList);
     }
 }
 
@@ -151,26 +134,6 @@ class MergeThread extends Thread {
 
     @Override
     public void run() {
-        int i = 0, j = 0;
-        int len1 = list1.size(), len2 = list2.size();
-        // two pointers to iterate through both lists together
-        // and add the smaller integer to the list
-        while (i != len1 && j != len2) {
-            int num1 = list1.get(i);
-            int num2 = list2.get(j);
-            if (num1 < num2) {
-                mergedList.add(num1);
-                i++;
-            } else {
-                mergedList.add(num2);
-                j++;
-            }
-        }
-
-        // add the remaining sub-lists
-        if (i != len1)
-            mergedList.addAll(list1.subList(i, len1));
-        if (j != len2)
-            mergedList.addAll(list2.subList(j, len2));
+        mergedList = SortAlgo.merge(list1, list2);
     }
 }
