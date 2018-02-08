@@ -8,12 +8,11 @@ import java.io.File;
 import java.util.*;
 
 public class ProcessManagement {
-    // set the working directory
+    // set the working directory and instructions file
     private static File workingDirectory = new File("/Users/ericyap/Desktop/test_folder/test3");
-    // set the instructions file
     private static File instructionSet = new File("test3.txt");
-    // set thread sleep duration (for concurrency testing)
-    private static long sleepDuration = 1000;
+    // set thread sleep duration in ms (for concurrency testing)
+    private static long sleepDuration = 500;
     // mapping between all nodes and their respective threads
     private static Map<ProcessGraphNode, ProcessThread> threadsMap = new HashMap<>();
 
