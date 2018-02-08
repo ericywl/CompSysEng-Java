@@ -5,7 +5,6 @@ import java.util.List;
 
 
 public class MedianThread {
-
     public static void main(String[] args) throws InterruptedException {
         // get input file path and number of threads from the command line arguments
         File inputFile = new File(args[0]);
@@ -154,6 +153,8 @@ class MergeThread extends Thread {
     public void run() {
         int i = 0, j = 0;
         int len1 = list1.size(), len2 = list2.size();
+        // two pointers to iterate through both lists together
+        // and add the smaller integer to the list
         while (i != len1 && j != len2) {
             int num1 = list1.get(i);
             int num2 = list2.get(j);
@@ -166,6 +167,7 @@ class MergeThread extends Thread {
             }
         }
 
+        // add the remaining sub-lists
         if (i != len1)
             mergedList.addAll(list1.subList(i, len1));
         if (j != len2)
