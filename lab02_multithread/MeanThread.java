@@ -9,7 +9,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MeanThread {
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         // get input file path and number of threads from the command line arguments
         File inputFile = new File(args[0]);
         int numOfThreads = Integer.valueOf(args[1]);
@@ -21,6 +21,9 @@ public class MeanThread {
             System.out.println("Invalid argument");
             return;
         }
+
+        // split array into sub-arrays
+        List<List<Integer>> subArrList = Parser.createSubArrays(array, numOfThreads);
         // record starting time
         long startTime = System.nanoTime();
         double globalSum, globalMean;
@@ -30,8 +33,6 @@ public class MeanThread {
             globalMean = globalSum / numOfThreads;
 
         } else {
-            // split array into sub-arrays
-            List<List<Integer>> subArrList = Parser.createSubArrays(array, numOfThreads);
             // create and start the threads
             List<MeanMultiThread> mmtList = new ArrayList<>();
             for (List<Integer> subArr : subArrList) {
@@ -44,11 +45,7 @@ public class MeanThread {
             List<Double> temporalMeans = new ArrayList<>();
             for (int i = 0; i < mmtList.size(); i++) {
                 MeanMultiThread mmt = mmtList.get(i);
-                try {
-                    mmt.join();
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
+                mmt.join();
                 // print out temporal mean of each thread
                 temporalMeans.add(mmt.getMean());
                 System.out.println("Temporal mean value of thread " + (i + 1) + " is " + mmt.getMean() + ".");
@@ -79,6 +76,7 @@ class MeanMultiThread extends Thread {
         return mean;
     }
 
+    @Override
     public void run() {
         mean = computeMean(numList);
     }
