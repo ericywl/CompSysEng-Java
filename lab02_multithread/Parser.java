@@ -1,3 +1,9 @@
+/* Lab 2
+ * Author: Yap Wei Lok
+ * ID: 1002394
+ * Date: 08/02/2017
+ */
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;

@@ -1,3 +1,9 @@
+/* Programming Assignment 1
+ * Author: Yap Wei Lok
+ * ID: 1002394
+ * Date: 01/02/2018
+ */
+
 import java.util.HashMap;
 import java.util.Map;
 
