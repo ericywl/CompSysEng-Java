@@ -1,4 +1,4 @@
-/* Lab 2
+/* Lab 2 Multi-Thread
  * Author: Yap Wei Lok
  * ID: 1002394
  * Date: 08/02/2017
