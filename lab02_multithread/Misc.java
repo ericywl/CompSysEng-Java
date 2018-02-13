@@ -1,7 +1,7 @@
 import java.util.ArrayList;
 import java.util.List;
 
-public class SortAlgo {
+public class Misc {
     public static List<Integer> mergeSort(List<Integer> unsortedList) {
         int len = unsortedList.size();
         if (len == 1) return unsortedList;
@@ -40,5 +40,13 @@ public class SortAlgo {
             mergedList.addAll(list2.subList(j, len2));
 
         return mergedList;
+    }
+
+    public static double summation(List<Integer> array) {
+        double sum = 0;
+        for (int i : array)
+            sum += i;
+
+        return sum;
     }
 }

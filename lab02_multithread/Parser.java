@@ -35,7 +35,7 @@ public class Parser {
         // split the huge array of integers into sub arrays
         List<List<Integer>> subArrList = new ArrayList<>();
         int arraySize = array.size();
-        int subArrLen = (numOfThreads == 1) ? arraySize : (arraySize / numOfThreads) + 1;
+        int subArrLen = (numOfThreads == 1) ? arraySize : (arraySize + numOfThreads - 1) / numOfThreads;
         for (int i = 0; i < numOfThreads; i++) {
             List<Integer> tempList = array.subList(i * subArrLen, Math.min((i + 1) * subArrLen, arraySize));
             subArrList.add(tempList);

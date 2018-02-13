@@ -119,7 +119,7 @@ class SortThread extends Thread {
     @Override
     public void run() {
         // use merge sort to sort the individual lists
-        numList = SortAlgo.mergeSort(numList);
+        numList = Misc.mergeSort(numList);
     }
 }
 
@@ -140,6 +140,6 @@ class MergeThread extends Thread {
 
     @Override
     public void run() {
-        mergedList = SortAlgo.merge(list1, list2);
+        mergedList = Misc.merge(list1, list2);
     }
 }

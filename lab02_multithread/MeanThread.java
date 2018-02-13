@@ -27,40 +27,32 @@ public class MeanThread {
         // record starting time
         long startTime = System.nanoTime();
         double globalSum, globalMean;
-
-        if (numOfThreads == 1) {
-            globalSum = array.stream().mapToInt(Integer::intValue).sum();
-            globalMean = globalSum / numOfThreads;
-
-        } else {
-            // create and start the threads
-            List<MeanMultiThread> mmtList = new ArrayList<>();
-            for (List<Integer> subArr : subArrList) {
-                MeanMultiThread mmt = new MeanMultiThread(subArr);
-                mmt.start();
-                mmtList.add(mmt);
-            }
-
-            // join the threads to main and add to temporary mean list
-            List<Double> temporalMeans = new ArrayList<>();
-            for (int i = 0; i < mmtList.size(); i++) {
-                MeanMultiThread mmt = mmtList.get(i);
-                mmt.join();
-                // print out temporal mean of each thread
-                temporalMeans.add(mmt.getMean());
-                System.out.println("Temporal mean value of thread " + (i + 1) + " is " + mmt.getMean() + ".");
-            }
-            // compute global mean
-            globalSum = temporalMeans.stream().mapToDouble(Double::doubleValue).sum();
-            globalMean = globalSum / numOfThreads;
+        // create and start the threads
+        List<MeanMultiThread> mmtList = new ArrayList<>();
+        for (List<Integer> subArr : subArrList) {
+            MeanMultiThread mmt = new MeanMultiThread(subArr);
+            mmt.start();
+            mmtList.add(mmt);
         }
+
+        // join the threads to main and add temporal mean to sum
+        globalSum = 0;
+        for (int i = 0; i < mmtList.size(); i++) {
+            MeanMultiThread mmt = mmtList.get(i);
+            mmt.join();
+            globalSum += mmt.getMean();
+            // print out temporal mean of each thread
+            System.out.println("Temporal mean value of thread " + (i + 1) + " is " + mmt.getMean() + ".");
+        }
+        // compute global mean
+        globalMean = globalSum / mmtList.size();
 
         // record ending time and compute total time elapsed
         long endTime = System.nanoTime();
-        double elapsedTime = (endTime - startTime) / 1000000000.0;
+        double elapsedTime = (endTime - startTime) / 1000000.0;
         // print out global mean and elapsed time
         System.out.println("\nThe global mean value is " + globalMean + ".");
-        System.out.println("Total time taken: " + elapsedTime + "s");
+        System.out.println("Total time taken: " + elapsedTime + "ms");
     }
 }
 
@@ -68,6 +60,7 @@ public class MeanThread {
 class MeanMultiThread extends Thread {
     private List<Integer> numList;
     private double mean;
+
     MeanMultiThread(List<Integer> numList) {
         this.numList = numList;
     }
@@ -81,10 +74,7 @@ class MeanMultiThread extends Thread {
         mean = computeMean(numList);
     }
 
-    // use reduce to compute list mean
     private double computeMean(List<Integer> list) {
-        double sum = list.stream().mapToInt(Integer::intValue).sum();
-
-        return sum / list.size();
+        return Misc.summation(list) / list.size();
     }
 }
