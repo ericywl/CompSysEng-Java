@@ -54,10 +54,10 @@ public class MedianThread {
 
         // record ending time and compute total time elapsed
         long endTime = System.nanoTime();
-        double elapsedTime = (endTime - startTime) / 1000000000.0;
+        double elapsedTime = (endTime - startTime) / 1000000.0;
         // print out global mean and elapsed time
         System.out.println("\nThe global median value is " + globalMedian + ".");
-        System.out.println("Total time taken: " + elapsedTime + "s");
+        System.out.println("Total time taken: " + elapsedTime + "ms");
     }
 
     private static double computeMedian(List<Integer> sortedList) {
@@ -120,6 +120,7 @@ class SortThread extends Thread {
     public void run() {
         // use merge sort to sort the individual lists
         numList = Misc.mergeSort(numList);
+        // Collections.sort(numList);
     }
 }
 
