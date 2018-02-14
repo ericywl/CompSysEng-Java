@@ -17,6 +17,7 @@ public class Parser {
         List<Integer> array = new ArrayList<>();
         try (BufferedReader br = new BufferedReader(new FileReader(inputFile))) {
             String line;
+            // split the line on whitespaces and add integer to array
             while ((line = br.readLine()) != null) {
                 for (String numStr : line.split("\\s")) {
                     if (!numStr.isEmpty())

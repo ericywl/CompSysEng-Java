@@ -42,9 +42,10 @@ public class Misc {
         return mergedList;
     }
 
-    public static double summation(List<Integer> array) {
+    // add all integers in the list
+    public static double summation(List<Integer> list) {
         double sum = 0;
-        for (int i : array)
+        for (int i : list)
             sum += i;
 
         return sum;

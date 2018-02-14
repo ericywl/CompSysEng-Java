@@ -35,7 +35,7 @@ public class MeanThread {
             mmtList.add(mmt);
         }
 
-        // join the threads to main and add temporal mean to sum
+        // join the threads to main and add temporal mean to globalSum
         globalSum = 0;
         for (int i = 0; i < mmtList.size(); i++) {
             MeanMultiThread mmt = mmtList.get(i);

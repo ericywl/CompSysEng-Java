@@ -40,7 +40,8 @@ public class MedianThread {
                 mmtList.add(mmt);
             }
 
-            // join the sorting threads to mean and added the sorted sub-lists to another list
+            // join the sorting threads to main
+            // and add the sorted sub-lists in the thread into another list
             List<List<Integer>> sortedSubArrList = new ArrayList<>();
             for (SortThread sortThread : mmtList) {
                 sortThread.join();
