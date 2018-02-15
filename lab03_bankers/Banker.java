@@ -100,7 +100,8 @@ public class Banker {
         }
 
         // check for safe state
-        if (!checkSafe(customerIndex, request)) {
+        boolean safe = checkSafe(customerIndex, request);
+        if (!safe) {
             for (int i = 0; i < request.length; i++) {
                 available[i] += request[i];
                 allocation[customerIndex][i] -= request[i];
@@ -143,19 +144,22 @@ public class Banker {
             throw new IllegalArgumentException("Wrong number of request resources.");
 
         int[] work = Arrays.copyOf(available, available.length);
-        boolean[] finish = new boolean[numOfResources];
-        for (int i = 0; i < finish.length; i++)
-            finish[i] = false;
+        boolean[] finish = new boolean[numOfCustomers];
+        for (int x = 0; x < finish.length; x++)
+            finish[x] = false;
 
         for (int i = 0; i < finish.length; i++) {
-            if (!finish[i] && !greaterThanArray(need[i], work)) {
+            if (!finish[i] && !greaterThanArray(need[customerIndex], work)) {
                 for (int j = 0; j < work.length; j++)
-                    work[j] += allocation[i][j];
+                    work[j] += allocation[customerIndex][j];
 
                 finish[i] = true;
                 i = -1;
             }
         }
+
+        for (boolean fin : finish)
+            if (!fin) return false;
 
         return true;
     }
