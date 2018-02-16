@@ -3,8 +3,6 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.Arrays;
 
-// package Week3;
-
 public class Banker {
     private int numOfCustomers;    // the number of customers
     private int numOfResources;    // the number of resources
@@ -84,19 +82,21 @@ public class Banker {
             throw new IllegalArgumentException("Wrong number of request resources.");
 
         System.out.println("Customer " + customerIndex + " requesting:\n" + Arrays.toString(request));
-        // check if each amount requested is greater than the respective need amount
-        if (greaterThanArray(request, need[customerIndex]))
-            return false;
 
-        // check if each amount requested is greater than the respective available amount
-        if (greaterThanArray(request, available))
-            return false;
+        for (int i = 0; i < request.length; i++) {
+            // check if each amount requested is greater than the respective need amount
+            if (request[i] > need[customerIndex][i])
+                return false;
+            // check if each amount requested is greater than the respective available amount
+            if (request[i] > available[i])
+                return false;
+        }
 
         // allocate the resources as per the request
-        for (int k = 0; k < request.length; k++) {
-            available[k] -= request[k];
-            allocation[customerIndex][k] += request[k];
-            need[customerIndex][k] -= request[k];
+        for (int i = 0; i < request.length; i++) {
+            available[i] -= request[i];
+            allocation[customerIndex][i] += request[i];
+            need[customerIndex][i] -= request[i];
         }
 
         // check for safe state
@@ -123,8 +123,7 @@ public class Banker {
         if (release.length != numOfResources)
             throw new IllegalArgumentException("Wrong number of release resources.");
 
-        System.out.println("Customer " + customerIndex + " releasing:\n"
-                + Arrays.toString(release));
+        System.out.println("Customer " + customerIndex + " releasing:\n" + Arrays.toString(release));
         for (int i = 0; i < numOfResources; i++) {
             available[i] += release[i];
             allocation[customerIndex][i] -= release[i];
@@ -141,11 +140,9 @@ public class Banker {
     private synchronized boolean checkSafe() {
         int[] work = Arrays.copyOf(available, available.length);
         boolean[] finish = new boolean[numOfCustomers];
-        for (int x = 0; x < finish.length; x++)
-            finish[x] = false;
 
         for (int i = 0; i < finish.length; i++) {
-            if (!finish[i] && !greaterThanArray(need[i], work)) {
+            if (!finish[i] && leqArray(need[i], work)) {
                 for (int j = 0; j < work.length; j++)
                     work[j] += allocation[i][j];
 
@@ -160,15 +157,13 @@ public class Banker {
         return true;
     }
 
-    /**
-     * Check if all elements in array1 is greater than the respective element in array2.
-     */
-    private boolean greaterThanArray(int[] array1, int[] array2) {
+    // Check if all elements in array1 are less than or equals to the respective element in array2.
+    private boolean leqArray(int[] array1, int[] array2) {
         if (array1.length != array2.length)
             throw new IllegalArgumentException("Arrays do not have same length.");
 
         for (int i = 0; i < array1.length; i++) {
-            if (array1[i] <= array2[i])
+            if (array1[i] > array2[i])
                 return false;
         }
 
