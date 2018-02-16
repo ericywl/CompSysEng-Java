@@ -101,7 +101,7 @@ public class Banker {
 
         // check for safe state
         // revert the allocation of resources if no safe state is found
-        if (!checkSafe(customerIndex, request)) {
+        if (!checkSafe()) {
             for (int i = 0; i < request.length; i++) {
                 available[i] += request[i];
                 allocation[customerIndex][i] -= request[i];
@@ -135,24 +135,19 @@ public class Banker {
     /**
      * Checks if the request will leave the bank in a safe state.
      *
-     * @param customerIndex The customer's index (0-indexed).
-     * @param request       An array of the requested count for each resource.
      * @return true if the requested resources will leave the bank in a
      * safe state, else false
      */
-    private synchronized boolean checkSafe(int customerIndex, int[] request) {
-        if (request.length != numOfResources)
-            throw new IllegalArgumentException("Wrong number of request resources.");
-
+    private synchronized boolean checkSafe() {
         int[] work = Arrays.copyOf(available, available.length);
         boolean[] finish = new boolean[numOfCustomers];
         for (int x = 0; x < finish.length; x++)
             finish[x] = false;
 
         for (int i = 0; i < finish.length; i++) {
-            if (!finish[i] && !greaterThanArray(need[customerIndex], work)) {
+            if (!finish[i] && !greaterThanArray(need[i], work)) {
                 for (int j = 0; j < work.length; j++)
-                    work[j] += allocation[customerIndex][j];
+                    work[j] += allocation[i][j];
 
                 finish[i] = true;
                 i = -1;
@@ -165,6 +160,9 @@ public class Banker {
         return true;
     }
 
+    /**
+     * Check if all elements in array1 is greater than the respective element in array2.
+     */
     private boolean greaterThanArray(int[] array1, int[] array2) {
         if (array1.length != array2.length)
             throw new IllegalArgumentException("Arrays do not have same length.");
@@ -272,7 +270,6 @@ public class Banker {
         } catch (IOException e) {
             System.out.println("Error opening: " + filename);
         }
-
     }
 
     /**
