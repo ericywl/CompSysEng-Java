@@ -100,8 +100,8 @@ public class Banker {
         }
 
         // check for safe state
-        boolean safe = checkSafe(customerIndex, request);
-        if (!safe) {
+        // revert the allocation of resources if no safe state is found
+        if (!checkSafe(customerIndex, request)) {
             for (int i = 0; i < request.length; i++) {
                 available[i] += request[i];
                 allocation[customerIndex][i] -= request[i];
@@ -123,7 +123,8 @@ public class Banker {
         if (release.length != numOfResources)
             throw new IllegalArgumentException("Wrong number of release resources.");
 
-        System.out.println("Customer " + customerIndex + " releasing:\n" + Arrays.toString(release));
+        System.out.println("Customer " + customerIndex + " releasing:\n"
+                + Arrays.toString(release));
         for (int i = 0; i < numOfResources; i++) {
             available[i] += release[i];
             allocation[customerIndex][i] -= release[i];
