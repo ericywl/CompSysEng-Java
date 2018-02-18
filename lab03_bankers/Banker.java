@@ -80,18 +80,15 @@ public class Banker {
             throw new IllegalArgumentException("Wrong number of request resources.");
 
         System.out.println("Customer " + customerIndex + " requesting:\n" + Arrays.toString(request));
-
-        for (int i = 0; i < request.length; i++) {
+        for (int i = 0; i < numOfResources; i++) {
             // check if each amount requested is greater than the respective need amount
-            if (request[i] > need[customerIndex][i])
-                return false;
+            if (request[i] > need[customerIndex][i]) return false;
             // check if each amount requested is greater than the respective available amount
-            if (request[i] > available[i])
-                return false;
+            if (request[i] > available[i]) return false;
         }
 
         // allocate the resources as per the request
-        for (int i = 0; i < request.length; i++) {
+        for (int i = 0; i < numOfResources; i++) {
             available[i] -= request[i];
             allocation[customerIndex][i] += request[i];
             need[customerIndex][i] -= request[i];
@@ -100,7 +97,7 @@ public class Banker {
         // check for safe state
         // revert the allocation of resources if no safe state is found
         if (!checkSafe()) {
-            for (int i = 0; i < request.length; i++) {
+            for (int i = 0; i < numOfResources; i++) {
                 available[i] += request[i];
                 allocation[customerIndex][i] -= request[i];
                 need[customerIndex][i] += request[i];
@@ -152,9 +149,9 @@ public class Banker {
         int[] work = Arrays.copyOf(available, available.length);
         boolean[] finish = new boolean[numOfCustomers];
 
-        for (int i = 0; i < finish.length; i++) {
+        for (int i = 0; i < numOfCustomers; i++) {
             if (!finish[i] && leqArray(need[i], work)) {
-                for (int j = 0; j < work.length; j++)
+                for (int j = 0; j < numOfResources; j++)
                     work[j] += allocation[i][j];
 
                 finish[i] = true;
