@@ -54,9 +54,7 @@ public class Banker {
         System.out.println("\nNeed:\n" + stringArray(need) + "\n");
     }
 
-    /**
-     * Creates a string from a 2D-array
-     */
+    // Creates a string from a 2D-array
     private String stringArray(int[][] array) {
         StringBuilder strBld = new StringBuilder();
 
@@ -131,6 +129,19 @@ public class Banker {
         }
     }
 
+    // Check if all elements in array1 are less than or equals to the respective element in array2.
+    private boolean leqArray(int[] array1, int[] array2) {
+        if (array1.length != array2.length)
+            throw new IllegalArgumentException("Arrays do not have same length.");
+
+        for (int i = 0; i < array1.length; i++) {
+            if (array1[i] > array2[i])
+                return false;
+        }
+
+        return true;
+    }
+
     /**
      * Checks if the request will leave the bank in a safe state.
      *
@@ -153,19 +164,6 @@ public class Banker {
 
         for (boolean fin : finish)
             if (!fin) return false;
-
-        return true;
-    }
-
-    // Check if all elements in array1 are less than or equals to the respective element in array2.
-    private boolean leqArray(int[] array1, int[] array2) {
-        if (array1.length != array2.length)
-            throw new IllegalArgumentException("Arrays do not have same length.");
-
-        for (int i = 0; i < array1.length; i++) {
-            if (array1[i] > array2[i])
-                return false;
-        }
 
         return true;
     }
@@ -235,7 +233,8 @@ public class Banker {
                             resources = new int[tokens.length];
                             for (int i = 0; i < tokens.length; i++)
                                 resources[i] = Integer.parseInt(tokens[i]);
-                            theBank.requestResources(customerIndex, resources);
+                            boolean req = theBank.requestResources(customerIndex, resources);
+                            if (!req) System.out.println("Request denied!");
 
                             break;
                         }
@@ -262,6 +261,7 @@ public class Banker {
             } finally {
                 fileReader.close();
             }
+
         } catch (IOException e) {
             System.out.println("Error opening: " + filename);
         }
