@@ -231,7 +231,8 @@ public class Banker {
                             for (int i = 0; i < tokens.length; i++)
                                 resources[i] = Integer.parseInt(tokens[i]);
                             boolean req = theBank.requestResources(customerIndex, resources);
-                            if (!req) System.out.println("Request denied!");
+                            String message = req ? "Request granted." : "Request denied!";
+                            System.out.println(message);
 
                             break;
                         }
