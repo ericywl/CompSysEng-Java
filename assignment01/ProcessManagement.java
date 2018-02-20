@@ -15,6 +15,7 @@ public class ProcessManagement {
     private static long sleepDuration = 500;
     // mapping between all nodes and their respective threads
     private static Map<ProcessGraphNode, ProcessThread> threadsMap = new HashMap<>();
+    private static final Object lock = new Object();
 
     public static void main(String[] args) {
         // parse the instruction file and construct a data structure, stored inside ProcessGraph class
@@ -51,7 +52,9 @@ public class ProcessManagement {
 
                 // start the thread and set node to executed if it is runnable
                 if (node.isRunnable()) {
-                    pThread.start();
+                    synchronized (lock) {
+                        pThread.start();
+                    }
                     node.setExecuted();
                 }
             }
