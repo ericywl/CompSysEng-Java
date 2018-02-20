@@ -60,7 +60,10 @@ public class ProcessManagement {
         System.out.println("All processes finished successfully.");
     }
 
-    // check if all nodes have finished execution
+    /**
+     * Check if all nodes have finished execution
+     * @return true if all nodes finished, else false
+     */
     private static boolean allNodesFinished() {
         for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
             if (!node.isDone())

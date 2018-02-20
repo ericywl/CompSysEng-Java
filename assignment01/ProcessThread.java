@@ -30,6 +30,7 @@ public class ProcessThread extends Thread {
         redirectIO();
     }
 
+    // redirecting the IO to respective files
     private void redirectIO() {
         // redirect input for non-stdin
         if (!node.getInputFile().toString().equalsIgnoreCase("stdin")) {
