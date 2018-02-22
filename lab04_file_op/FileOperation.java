@@ -9,7 +9,9 @@ import java.util.*;
 
 public class FileOperation {
     private static File currentDirectory = new File(System.getProperty("user.dir"));
-    private static String branch = "|-";
+    private static int listPadding = 4;
+    private static String treeBranch = "|-";
+    private static int treePadding = 2;
 
     public static void main(String[] args) throws java.io.IOException {
         String commandLine;
@@ -327,7 +329,7 @@ public class FileOperation {
             return;
         }
 
-        String result = javaTreeHelper(dir, 0, depth, sortMethod);
+        String result = javaTreeHelper(dir, 1, depth, sortMethod);
         if (result != null)
             System.out.println(result);
     }
@@ -338,10 +340,10 @@ public class FileOperation {
             return null;
         }
 
-        if (currDepth == maxDepth)
+        if (maxDepth != -1 && currDepth > maxDepth)
             return null;
 
-        int padding = calcPadding(currDepth);
+        int padding = (currDepth < 2) ? 0 : (treePadding + treeBranch.length()) * (currDepth - 1);
         StringBuilder strBld = new StringBuilder();
         fileList = sortFileList(fileList, sortMethod);
         if (fileList == null)
@@ -349,7 +351,7 @@ public class FileOperation {
 
         for (File file : fileList) {
             if (padding > 0) {
-                strBld.append(String.format("%" + padding + "s", branch));
+                strBld.append(String.format("%" + padding + "s", treeBranch));
             }
 
             strBld.append(file.getName()).append("\n");
@@ -412,8 +414,8 @@ public class FileOperation {
      * @param list - file list to go through
      */
     private static void printListWithProperty(File[] list) {
-        int nameLen = findLongestStrLen(list, "name") + 4;
-        int sizeLen = findLongestStrLen(list, "size") + 4;
+        int nameLen = findLongestStrLen(list, "name") + listPadding;
+        int sizeLen = findLongestStrLen(list, "size") + listPadding;
 
         for (File file : list) {
             String strBld = String.format("%-" + nameLen + "s", file.getName()) +
@@ -448,19 +450,6 @@ public class FileOperation {
         }
 
         return list;
-    }
-
-    /**
-     * Function to calculate the padding for any depth on tree output
-     *
-     * @param depth - current depth of the traversal
-     * @return padding for depth on tree output
-     */
-    private static int calcPadding(int depth) {
-        if (depth < 1) return 0;
-        if (depth == 1) return 2 + branch.length();
-
-        return calcPadding(depth - 1) + 2 + branch.length();
     }
 
 }
