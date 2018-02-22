@@ -181,7 +181,7 @@ public class FileOperation {
             in.close();
 
         } catch (FileNotFoundException ex) {
-            System.out.println("File is not found.");
+            System.out.println(name + " does not exist.");
         }
     }
 
