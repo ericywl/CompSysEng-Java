@@ -19,7 +19,7 @@ public class FileOperation {
 
         while (true) {
             // read what the user entered
-            System.out.print("jsh>");
+            System.out.print("jsh> ");
             commandLine = console.readLine();
             // clear the space before and after the command line
             commandLine = commandLine.trim();
@@ -93,14 +93,14 @@ public class FileOperation {
             }
             // catch the IOException and resume waiting for commands
             catch (IOException ex) {
-                ex.printStackTrace();
+                System.out.println(ex);
             }
         }
     }
 
     private static void handleCreate(String[] commandStr) throws IOException {
         if (commandStr.length == 1) {
-            System.out.println("Arguments needed.");
+            System.out.println("Arguments needed for 'create' command.");
             return;
         }
 
@@ -116,14 +116,15 @@ public class FileOperation {
      */
     private static void javaCreate(File dir, String name) throws IOException {
         File file = new File(dir, name);
-        boolean newFile = file.createNewFile();
-        if (!newFile)
-            System.out.println("File is not created.");
+        boolean fileCreated = file.createNewFile();
+
+        String message = (fileCreated) ? name + " created." : name + " already exists.";
+        System.out.println(message);
     }
 
     private static void handleDelete(String[] commandStr) {
         if (commandStr.length == 1) {
-            System.out.println("Arguments needed.");
+            System.out.println("Arguments needed for 'delete' command.");
             return;
         }
 
@@ -139,14 +140,15 @@ public class FileOperation {
      */
     private static void javaDelete(File dir, String name) {
         File file = new File(dir, name);
-        boolean deleted = file.delete();
-        if (!deleted)
-            System.out.println("File is not deleted.");
+        boolean fileDeleted = file.delete();
+
+        String message = (fileDeleted) ? name + " deleted." : name + " does not exist.";
+        System.out.println(message);
     }
 
     private static void handleDisplay(String[] commandStr) throws IOException {
         if (commandStr.length == 1) {
-            System.out.println("Arguments needed.");
+            System.out.println("Arguments needed for 'display' command.");
             return;
         }
 
@@ -172,7 +174,7 @@ public class FileOperation {
             in.close();
 
         } catch (FileNotFoundException ex) {
-            System.out.println("File is not found");
+            System.out.println("File is not found.");
         }
     }
 
@@ -192,7 +194,7 @@ public class FileOperation {
             return;
         }
 
-        System.out.println("Too many arguments for list. Only maximum of two arguments.");
+        System.out.println("Too many arguments for 'list' command. Only maximum of two arguments.");
     }
 
     /**
@@ -230,17 +232,17 @@ public class FileOperation {
             return;
         }
 
-        System.out.println("Invalid second argument (property).");
+        System.out.println("Invalid second argument for 'list' command (property).");
     }
 
     private static void handleFind(String[] commandStr) {
         if (commandStr.length == 1) {
-            System.out.println("Argument needed.");
+            System.out.println("Argument needed for 'find' command.");
             return;
         }
 
         if (commandStr.length > 2) {
-            System.out.println("Too many arguments for find. Only one argument needed.");
+            System.out.println("Too many arguments for 'find' command. Only one argument needed.");
             return;
         }
 
@@ -289,7 +291,7 @@ public class FileOperation {
         try {
             int depth = Integer.parseInt(commandStr[1]);
             if (depth < 1) {
-                System.out.println("Second argument has to greater than 0.");
+                System.out.println("Second argument has to be greater than 0.");
                 return;
             }
 
@@ -303,7 +305,7 @@ public class FileOperation {
                 return;
             }
 
-            System.out.println("Too many arguments for tree. Only maximum of two arguments");
+            System.out.println("Too many arguments for 'tree' command. Only maximum of two arguments");
 
         } catch (NumberFormatException ex) {
             System.out.println("Invalid second argument. Only positive integers allowed.");
