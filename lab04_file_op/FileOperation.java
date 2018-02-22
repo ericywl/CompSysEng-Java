@@ -40,38 +40,36 @@ public class FileOperation {
             ArrayList<String> command = new ArrayList<>(Arrays.asList(commandStr));
 
             switch (commandStr[0].toLowerCase()) {
-                // handle create
                 case "create":
+                    // handle create
                     handleCreate(commandStr);
                     continue;
 
-                    // handle delete
                 case "delete":
+                    // handle delete
                     handleDelete(commandStr);
                     continue;
 
-                    // handle display
                 case "display":
+                    // handle display
                     handleDisplay(commandStr);
                     continue;
 
-                    // handle list
                 case "list":
+                    // handle list
                     handleList(commandStr);
                     continue;
 
-                    // handle find
                 case "find":
+                    // handle find
                     handleFind(commandStr);
                     continue;
 
-                    // handle tree
                 case "tree":
+                    // handle tree
                     handleTree(commandStr);
                     continue;
             }
-
-            // TODO: implement code to handle tree here
 
             // other commands
             ProcessBuilder pBuilder = new ProcessBuilder(command);
@@ -98,12 +96,15 @@ public class FileOperation {
         }
     }
 
+    // 'create' command handler (support multiple creates in one line)
     private static void handleCreate(String[] commandStr) throws IOException {
+        // check that arguments are provided for the command
         if (commandStr.length == 1) {
             System.out.println("Arguments needed for 'create' command.");
             return;
         }
 
+        // loop through all arguments and javaCreate them
         for (int i = 1; i < commandStr.length; i++)
             javaCreate(currentDirectory, commandStr[i]);
     }
@@ -122,12 +123,15 @@ public class FileOperation {
         System.out.println(message);
     }
 
+    // 'delete' command handler (support multiple deletes in one line)
     private static void handleDelete(String[] commandStr) {
+        // check that arguments are provided for the command
         if (commandStr.length == 1) {
             System.out.println("Arguments needed for 'delete' command.");
             return;
         }
 
+        // loop through all arguments and javaDelete them
         for (int i = 1; i < commandStr.length; i++)
             javaDelete(currentDirectory, commandStr[i]);
     }
@@ -146,12 +150,15 @@ public class FileOperation {
         System.out.println(message);
     }
 
+    // 'display' command handler (support multiple displays in one line)
     private static void handleDisplay(String[] commandStr) throws IOException {
+        // check that arguments are provided for the command
         if (commandStr.length == 1) {
             System.out.println("Arguments needed for 'display' command.");
             return;
         }
 
+        // loop through all arguments and javaCat them
         for (int i = 1; i < commandStr.length; i++)
             javaCat(currentDirectory, commandStr[i]);
     }
@@ -178,22 +185,27 @@ public class FileOperation {
         }
     }
 
+    // 'list' command handler
     private static void handleList(String[] commandStr) {
+        // if no arguments provided
         if (commandStr.length == 1) {
             javaLs(currentDirectory, "", "");
             return;
         }
 
+        // if 1 argument provided
         if (commandStr.length == 2) {
             javaLs(currentDirectory, commandStr[1], "");
             return;
         }
 
+        // if 2 arguments provided
         if (commandStr.length == 3) {
             javaLs(currentDirectory, commandStr[1], commandStr[2]);
             return;
         }
 
+        // if more than 2 arguments provided
         System.out.println("Too many arguments for 'list' command. Only maximum of two arguments.");
     }
 
@@ -206,11 +218,13 @@ public class FileOperation {
      */
     private static void javaLs(File dir, String displayMethod, String sortMethod) {
         File[] fileList = dir.listFiles();
+        // check if any files exist in the working directory
         if (fileList == null || fileList.length == 0) {
             System.out.println("No files in this directory.");
             return;
         }
 
+        // default display name only and sort by name
         if (displayMethod.equalsIgnoreCase("")) {
             fileList = sortFileList(fileList, "name");
             if (fileList != null) {
@@ -221,10 +235,11 @@ public class FileOperation {
             return;
         }
 
+        // if property given and no sort method, default sort method to name
         if (displayMethod.equalsIgnoreCase("property")) {
             if (sortMethod.equalsIgnoreCase(""))
                 sortMethod = "name";
-
+            // sort the file list according to the sort method and print the list of files
             fileList = sortFileList(fileList, sortMethod);
             if (fileList != null)
                 printListWithProperty(fileList);
@@ -232,23 +247,28 @@ public class FileOperation {
             return;
         }
 
+        // if second argument is not 'property'
         System.out.println("Invalid second argument for 'list' command (property).");
     }
 
+    // 'find' command handler
     private static void handleFind(String[] commandStr) {
+        // if no arguments provided
         if (commandStr.length == 1) {
             System.out.println("Argument needed for 'find' command.");
             return;
         }
 
+        // if more than 1 arguments provided
         if (commandStr.length > 2) {
             System.out.println("Too many arguments for 'find' command. Only one argument needed.");
             return;
         }
 
+        // javaFind the argument, print message if no matching files found
         boolean found = javaFind(currentDirectory, commandStr[1]);
         if (!found) {
-            System.out.println("No files found.");
+            System.out.println("No matching files found.");
         }
     }
 
@@ -261,17 +281,20 @@ public class FileOperation {
      */
     private static boolean javaFind(File dir, String name) {
         File[] fileList = dir.listFiles();
+        // check if any files exist in the working directory
         if (fileList == null || fileList.length == 0) {
             return false;
         }
 
         boolean flag = false;
         for (File file : fileList) {
+            // recursively find the name in sub-directories
             if (file.isDirectory()) {
                 flag = flag | javaFind(file, name);
                 continue;
             }
 
+            // print out the absolute file path if found
             String filePath = file.getAbsolutePath();
             if (filePath.contains(name)) {
                 System.out.println(filePath);
@@ -282,34 +305,41 @@ public class FileOperation {
         return flag;
     }
 
+    // 'tree' command handler
     private static void handleTree(String[] commandStr) {
+        // if no arguments provided
         if (commandStr.length == 1) {
             javaTree(currentDirectory, -1, "name");
             return;
         }
 
+        int depth;
+        // check that the first argument is a positive integer
         try {
-            int depth = Integer.parseInt(commandStr[1]);
+            depth = Integer.parseInt(commandStr[1]);
             if (depth < 1) {
                 System.out.println("Second argument has to be greater than 0.");
                 return;
             }
-
-            if (commandStr.length == 2) {
-                javaTree(currentDirectory, depth, "name");
-                return;
-            }
-
-            if (commandStr.length == 3) {
-                javaTree(currentDirectory, depth, commandStr[2]);
-                return;
-            }
-
-            System.out.println("Too many arguments for 'tree' command. Only maximum of two arguments");
-
         } catch (NumberFormatException ex) {
             System.out.println("Invalid second argument. Only positive integers allowed.");
+            return;
         }
+
+        // if only 1 argument provided
+        if (commandStr.length == 2) {
+            javaTree(currentDirectory, depth, "name");
+            return;
+        }
+
+        // if 2 arguments provided
+        if (commandStr.length == 3) {
+            javaTree(currentDirectory, depth, commandStr[2]);
+            return;
+        }
+
+        // if more than 2 arguments provided
+        System.out.println("Too many arguments for 'tree' command. Only maximum of two arguments");
     }
 
     /**
@@ -321,42 +351,60 @@ public class FileOperation {
      */
     private static void javaTree(File dir, int depth, String sortMethod) {
         File[] fileList = dir.listFiles();
+        // check if any files exist in the working directory
         if (fileList == null || fileList.length == 0) {
             System.out.println("No files in this directory.");
             return;
         }
 
+        // check for valid depth parameter (-1 for indefinite, >0 for finite)
         if (depth != -1 && depth < 1) {
             System.out.println("Invalid second argument. Depth has to be greater than 0.");
             return;
         }
 
+        // print out the tree result
         String result = javaTreeHelper(dir, 1, depth, sortMethod);
         if (result != null)
             System.out.println(result);
     }
 
+    /**
+     * Helper function for javaTree.
+     *
+     * @param dir - current directory
+     * @param currDepth - current depth of tree traversal
+     * @param maxDepth - specified maximum depth of the traversal
+     * @param sortMethod - control the sort type
+     * @return output string for the tree
+     */
     private static String javaTreeHelper(File dir, int currDepth, int maxDepth, String sortMethod) {
         File[] fileList = dir.listFiles();
+        // check if any files exist in the current directory
         if (fileList == null || fileList.length == 0) {
             return null;
         }
 
+        // stop if current depth is greater than maximum depth for normal cases
+        // (if maximum depth = -1, traverse indefinitely till no files left)
         if (maxDepth != -1 && currDepth > maxDepth)
             return null;
 
+        // padding for neat output string
         int padding = (currDepth < 2) ? 0 : (treePadding + treeBranch.length()) * (currDepth - 1);
-        StringBuilder strBld = new StringBuilder();
+        // sort the file list according to sort method
         fileList = sortFileList(fileList, sortMethod);
         if (fileList == null)
             return null;
 
+        StringBuilder strBld = new StringBuilder();
         for (File file : fileList) {
             if (padding > 0) {
                 strBld.append(String.format("%" + padding + "s", treeBranch));
             }
 
             strBld.append(file.getName()).append("\n");
+            // recursively traverse and add result to string if file is directory
             if (file.isDirectory()) {
                 String fileDirStr = javaTreeHelper(file, currDepth + 1, maxDepth, sortMethod);
                 if (fileDirStr != null) {
@@ -438,8 +486,7 @@ public class FileOperation {
      * @return sorted list - the sorted file list
      */
     private static File[] sortFileList(File[] list, String sortMethod) {
-        // sort the file list based on sort_method
-        // if sort based on name
+        // sort the file list based on sort method (name, size or time)
         if (sortMethod.equalsIgnoreCase("name")) {
             Arrays.sort(list, Comparator.comparing(f -> (f.getName())));
         } else if (sortMethod.equalsIgnoreCase("size")) {
