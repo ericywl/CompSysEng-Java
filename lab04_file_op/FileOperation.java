@@ -10,8 +10,9 @@ import java.util.*;
 public class FileOperation {
     private static File currentDirectory = new File(System.getProperty("user.dir"));
     private static int listPadding = 4;
-    private static String treeBranch = "|-";
-    private static int treePadding = 2;
+    private static String treeBranch = "\u251c\u2500\u2500";
+    private static String treeBranchEnd = "\u2514\u2500\u2500";
+    private static int treePadding = 3;
 
     public static void main(String[] args) throws java.io.IOException {
         String commandLine;
@@ -364,56 +365,50 @@ public class FileOperation {
         }
 
         // print out the tree result
-        String result = javaTreeHelper(dir, 1, depth, sortMethod);
-        if (result != null)
-            System.out.println(result);
+        StringBuilder strBld = new StringBuilder(".\n");
+        strBld = javaTreeHelper(dir, 0, depth, sortMethod, strBld, new HashSet<>());
+        System.out.println(strBld.toString());
     }
 
     /**
-     * Helper function for javaTree.
+     * Helper function to append the output string of the directory tree to the string builder
      *
-     * @param dir - current directory
-     * @param currDepth - current depth of tree traversal
-     * @param maxDepth - specified maximum depth of the traversal
-     * @param sortMethod - control the sort type
-     * @return output string for the tree
+     * @param dir - current working directory
+     * @param indent - indentation for the directory tree
+     * @param depthLeft - the depth left to traverse
+     * @param sortMethod - method to sort the directory
+     * @param strBld - overall string builder
+     * @param completeLevels - directory levels that are done traversing
+     * @return strBld after appending all the strings
      */
-    private static String javaTreeHelper(File dir, int currDepth, int maxDepth, String sortMethod) {
+    private static StringBuilder javaTreeHelper(File dir, int indent, int depthLeft, String sortMethod,
+                                                StringBuilder strBld, Set<Integer> completeLevels) {
+        if (!dir.isDirectory())
+            throw new IllegalArgumentException("The file is not a directory.");
+
+        if (depthLeft == 0)
+            return strBld;
+
         File[] fileList = dir.listFiles();
-        // check if any files exist in the current directory
-        if (fileList == null || fileList.length == 0) {
-            return null;
-        }
-
-        // stop if current depth is greater than maximum depth for normal cases
-        // (if maximum depth = -1, traverse indefinitely till no files left)
-        if (maxDepth != -1 && currDepth > maxDepth)
-            return null;
-
-        // padding for neat output string
-        int padding = (currDepth < 2) ? 0 : (treePadding + treeBranch.length()) * (currDepth - 1);
-        // sort the file list according to sort method
         fileList = sortFileList(fileList, sortMethod);
         if (fileList == null)
-            return null;
+            return strBld;
 
-        StringBuilder strBld = new StringBuilder();
-        for (File file : fileList) {
-            if (padding > 0) {
-                strBld.append(String.format("%" + padding + "s", treeBranch));
-            }
+        for (int i = 0; i < fileList.length; i++) {
+            File file = fileList[i];
+            boolean newIsLast = (i == fileList.length - 1);
+            if (newIsLast)
+                completeLevels.add(indent);
 
-            strBld.append(file.getName()).append("\n");
-            // recursively traverse and add result to string if file is directory
             if (file.isDirectory()) {
-                String fileDirStr = javaTreeHelper(file, currDepth + 1, maxDepth, sortMethod);
-                if (fileDirStr != null) {
-                    strBld.append(fileDirStr);
-                }
+                strBld = appendDirectory(file, indent, strBld, newIsLast, completeLevels);
+                strBld = javaTreeHelper(file, indent + 1, depthLeft - 1, sortMethod, strBld, completeLevels);
+            } else {
+                strBld = appendFile(file, indent, strBld, newIsLast, completeLevels);
             }
         }
 
-        return strBld.toString();
+        return strBld;
     }
 
 
@@ -499,6 +494,50 @@ public class FileOperation {
         }
 
         return list;
+    }
+
+    private static StringBuilder appendDirectory(File dir, int indent, StringBuilder strBld, boolean isLast,
+                                                 Set<Integer> completeLevels) {
+            strBld.append(createIndentStr(indent, completeLevels));
+            strBld.append(isLast ? treeBranchEnd : treeBranch);
+            strBld.append(dir.getName());
+            strBld.append("/");
+            strBld.append("\n");
+
+        return strBld;
+    }
+
+    private static StringBuilder appendFile(File file, int indent, StringBuilder strBld, boolean isLast,
+                                            Set<Integer> completeLevels) {
+        strBld.append(createIndentStr(indent, completeLevels));
+        strBld.append(isLast ? treeBranchEnd : treeBranch);
+        strBld.append(file.getName());
+        strBld.append("\n");
+
+        return strBld;
+    }
+
+    /**
+     * Function to create a string for indenting the tree output
+     *
+     * @param indent - the number of spaces to indent
+     * @return the string of the indent
+     */
+    private static String createIndentStr(int indent, Set<Integer> completeLevels) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < indent; i++) {
+            String str;
+            if (completeLevels.contains(i)) {
+                str = " ";
+            } else {
+                str = "\u2502";
+            }
+
+            sb.append(String.format("%-" + (treePadding + 1) + "s", str));
+
+        }
+
+        return sb.toString();
     }
 
 }
