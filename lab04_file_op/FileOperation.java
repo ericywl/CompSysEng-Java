@@ -406,6 +406,8 @@ public class FileOperation {
             } else {
                 strBld = appendFile(file, indent, strBld, newIsLast, completeLevels);
             }
+
+            completeLevels.remove(indent);
         }
 
         return strBld;
