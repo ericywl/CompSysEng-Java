@@ -9,14 +9,16 @@ import java.util.*;
 
 public class ProcessManagement {
     // set the working directory and instructions file
-    private static File workingDirectory = new File("/Users/ericyap/Desktop/test_folder/assignment1_test/test2");
+    private static File workingDirectory = new File("");
     private static File instructionSet = new File("test2.txt");
     // set thread sleep duration in ms (for concurrency testing)
-    private static long sleepDuration = 0;
+    private static long sleepDuration = 500;
     // mapping between all nodes and their respective threads
     private static Map<ProcessGraphNode, ProcessThread> threadsMap = new HashMap<>();
 
     public static void main(String[] args) {
+        parseArgs(args);
+
         // parse the instruction file and construct a data structure, stored inside ProcessGraph class
         ParseFile.generateGraph(new File(workingDirectory + "/" + instructionSet));
         // print the graph
@@ -36,16 +38,11 @@ public class ProcessManagement {
                 ProcessThread pThread = threadsMap.get(node);
                 // set node to done if thread finished
                 if (pThread.isFinished()) {
-                    try {
-                        pThread.join();
-                    } catch (InterruptedException ex) {
-                        ex.printStackTrace();
-                    }
                     node.setDone();
                 }
 
-                // set node to runnable if all parents finished execution
-                // and node not already executed or is done
+                /* set node to runnable if all parents finished execution
+                and node not already executed or is done */
                 if (node.allParentsDone() & !node.isExecuted() & !node.isDone())
                     node.setRunnable();
 
@@ -58,6 +55,36 @@ public class ProcessManagement {
         }
 
         System.out.println("All processes finished successfully.");
+    }
+
+    private static void parseArgs(String[] args) {
+        if (args.length == 0)
+            return;
+
+        if (args.length != 2 && args.length != 3) {
+            throw new IllegalArgumentException("Wrong number of arguments.");
+        }
+
+        // set working directory and instruction set to the arguments provided
+        File tempWorkingDirectory = new File(args[0]);
+        File tempInstructionSet = new File(args[1]);
+        // provided path is not a directory
+        if (!tempWorkingDirectory.isDirectory()) {
+            throw new IllegalArgumentException(tempWorkingDirectory + " is not a directory.");
+        }
+
+        File file = new File(tempWorkingDirectory + "/" + tempInstructionSet);
+        // file does not exist
+        if (!file.exists()) {
+            throw new IllegalArgumentException("The file provided does not exist.");
+        }
+        // path given is not a file
+        if (!file.isFile()) {
+            throw new IllegalArgumentException("The path provided is not a file.");
+        }
+
+        workingDirectory = tempWorkingDirectory;
+        instructionSet = tempInstructionSet;
     }
 
     /**
