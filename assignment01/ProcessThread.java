@@ -51,7 +51,13 @@ public class ProcessThread extends Thread {
             Thread.sleep(sleepDuration);
             // start the process and wait for it to finish
             Process p = pb.start();
-            p.waitFor();
+            int termVal = p.waitFor();
+            // check for abnormal exit value
+            if (termVal != 0) {
+                System.out.println("Process " + node.getNodeId() + " terminated abnormally.");
+                return;
+            }
+
             debugPrint(p);
 
             // print finish status and set finished to true
