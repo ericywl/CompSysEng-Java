@@ -52,14 +52,15 @@ public class ProcessThread extends Thread {
             // start the process and wait for it to finish
             Process p = pb.start();
             p.waitFor();
+            debugPrint(p);
 
             // print finish status and set finished to true
             System.out.println("Process " + node.getNodeId() + " has finished execution.");
 
         } catch (IOException | InterruptedException ex) {
             // print any error messages
-            System.out.println(ex.getMessage());
-            System.out.println("Process " + node.getNodeId() + " exited with an error.");
+            System.out.println("Process " + node.getNodeId() + " exited with an error: "
+                    + ex.getMessage() + ".");
         } finally {
             finished = true;
         }
@@ -71,6 +72,7 @@ public class ProcessThread extends Thread {
 
     /**
      * Print the output of the process
+     * (mainly for debugging purposes since the outputs are redirected)
      * @param p - the process to get information from
      */
     private void debugPrint(Process p) {

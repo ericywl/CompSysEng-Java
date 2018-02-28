@@ -11,8 +11,8 @@ public class ProcessManagement {
     // set the working directory and instructions file
     private static File workingDirectory = new File("");
     private static File instructionSet = new File("test2.txt");
-    // set thread sleep duration in ms (for concurrency testing)
-    private static long sleepDuration = 500;
+    // set thread sleep duration in ms (for concurrency testing and better visualization)
+    private static long sleepDuration = 0;
     // mapping between all nodes and their respective threads
     private static Map<ProcessGraphNode, ProcessThread> threadsMap = new HashMap<>();
 
@@ -31,7 +31,9 @@ public class ProcessManagement {
         manageThreads();
     }
 
-    // schedule the processes while all nodes are not done executing
+    /**
+     * Schedule the processes while all nodes are not done executing
+     */
     private static void manageThreads() {
         while (!allNodesFinished()) {
             for (ProcessGraphNode node : threadsMap.keySet()) {
@@ -54,9 +56,14 @@ public class ProcessManagement {
             }
         }
 
+        // Print finish status
         System.out.println("All processes finished successfully.");
     }
 
+    /**
+     * Parse the command line arguments if they are provided
+     * @param args - the command line arguments
+     */
     private static void parseArgs(String[] args) {
         if (args.length == 0)
             return;
@@ -65,7 +72,7 @@ public class ProcessManagement {
             throw new IllegalArgumentException("Wrong number of arguments.");
         }
 
-        // set working directory and instruction set to the arguments provided
+        // temporary working directory and instruction set to the arguments provided
         File tempWorkingDirectory = new File(args[0]);
         File tempInstructionSet = new File(args[1]);
         // provided path is not a directory
@@ -83,8 +90,14 @@ public class ProcessManagement {
             throw new IllegalArgumentException("The path provided is not a file.");
         }
 
+        // set working directory and instruction set
         workingDirectory = tempWorkingDirectory;
         instructionSet = tempInstructionSet;
+
+        // last argument is the sleep duration
+        if (args.length == 3) {
+            sleepDuration = Integer.parseInt(args[2]);
+        }
     }
 
     /**
