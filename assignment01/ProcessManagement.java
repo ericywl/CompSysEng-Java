@@ -9,8 +9,10 @@ import java.util.*;
 
 public class ProcessManagement {
     // set the working directory and instructions file
-    private static File workingDirectory = new File("test_folder/graph-file");
-    private static File instructionSet = new File("graph-file");
+    private static File workingDirectory = new File("/Users/ericyap/Dropbox/SUTD" +
+            "/50.005_computer_system_engineering" +
+            "/week02/assignment01/submit/src/test_folder/test2");
+    private static File instructionSet = new File("test2.txt");
     // set thread sleep duration in ms (for concurrency testing and better visualization)
     private static long sleepDuration = 0;
 
@@ -29,15 +31,16 @@ public class ProcessManagement {
         ParseFile.generateGraph(new File(workingDirectory + "/" + instructionSet));
         // print the graph
         ProcessGraph.printGraph();
-        // ProcessGraph.printBasic();
 
+        // initialize all threads
         for (ProcessGraphNode node : ProcessGraph.nodes.values())
             threads.add(new ProcessThread(node, workingDirectory, sleepDuration));
 
         boolean success = manageThreads();
         if (!success) {
-            // Program terminated pre-maturely
-            System.out.println("Program terminating due to the above error.");
+            // Program terminating pre-maturely
+            printTerminationMsgs();
+            System.out.println("Program terminating due to the above error(s).");
             return;
         }
 
@@ -51,26 +54,31 @@ public class ProcessManagement {
     private static boolean manageThreads() {
         while (!allNodesFinished()) {
             for (ProcessThread pThread : threads) {
+                // check that the thread is not yet finished 
                 if (finishedThreads.contains(pThread)) {
                     continue;
                 }
 
                 ProcessGraphNode node = pThread.getNode();
                 // set node to done if thread finished successfully
-                if (pThread.getFinishStatus() == 0) {
+                if (pThread.getFinishStatus() == FinishStatus.FINISHED) {
                     node.setDone();
                     finishedThreads.add(pThread);
-                    System.out.println("Process " + node.getNodeId() + " has finished execution.");
                 }
 
-                // exit manageThreads() if the finish status is -1
-                if (pThread.getFinishStatus() == -1) {
-                    return false;
+                // exit manageThreads() if the finish status is TERMINATED
+                // check that other running threads have finished before terminating
+                if (pThread.getFinishStatus() == FinishStatus.TERMINATED) {
+                    node.setTerminated(pThread.getTerminationMsg());
+                    if (!someNodesStillRunning()) {
+                        return false;
+                    }
                 }
 
                 /* set node to runnable if all parents finished execution
-                and node not already executed or is done */
-                if (node.allParentsDone() & !node.isExecuted() & !node.isDone())
+                and node not already executed or is done or is terminated due to error */
+                if (node.allParentsDone() && !node.isExecuted()
+                        && !node.isDone() && !node.isTerminated())
                     node.setRunnable();
 
                 // start the thread and set node to executed if it is runnable
@@ -86,13 +94,14 @@ public class ProcessManagement {
 
     /**
      * Parse the command line arguments if they are provided
-     *
      * @param args - the command line arguments
      */
     private static void parseArgs(String[] args) {
+        // no arguments
         if (args.length == 0)
             return;
 
+        // wrong number of arguments
         if (args.length != 2 && args.length != 3) {
             throw new IllegalArgumentException("Wrong number of arguments.");
         }
@@ -127,7 +136,6 @@ public class ProcessManagement {
 
     /**
      * Check if all nodes have finished execution
-     *
      * @return true if all nodes finished, else false
      */
     private static boolean allNodesFinished() {
@@ -137,5 +145,31 @@ public class ProcessManagement {
         }
 
         return true;
+    }
+
+    /**
+     * Check if there are still nodes running
+     * @return true if some nodes are still running, else false
+     */
+    private static boolean someNodesStillRunning() {
+        for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
+            if (node.isExecuted() && !node.isDone() && !node.isTerminated())
+                return true;
+        }
+
+        return false;
+    }
+
+    /**
+     * Function to print out the termination messages (if there is any error)
+     */
+    private static void printTerminationMsgs() {
+        for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
+            if (node.isTerminated()) {
+                String msg = String.format("Process %d terminated with an error: %s",
+                        node.getNodeId(), node.getTerminationMsg());
+                System.out.println(msg);
+            }
+        }
     }
 }

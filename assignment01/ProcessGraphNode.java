@@ -16,15 +16,19 @@ public class ProcessGraphNode {
     private File inputFile;
     private File outputFile;
     private String command;
+    private String terminationMessage;
+
     private boolean runnable;
     private boolean executed;
     private boolean done;
+    private boolean terminated;
 
     public ProcessGraphNode(int nodeId) {
         this.nodeId = nodeId;
         this.runnable = false;
         this.executed = false;
         this.done = false;
+        this.terminated = false;
     }
 
     // check if all parent nodes are done ie. current node cleared dependencies
@@ -37,22 +41,51 @@ public class ProcessGraphNode {
         return true;
     }
 
-    // setting a process to executed would disable it from being runnable
+    /**
+     * Set the process to terminated, disabling it from running again
+     * @param msg - the error message
+     */
+    public void setTerminated(String msg) {
+        this.terminated = true;
+        this.runnable = false;
+        this.executed = false;
+        this.done = false;
+
+        this.terminationMessage = msg;
+    }
+
+    /**
+     * Set the process to executed, disable it from being runnable
+     * Set done to false just in case
+     */
     public void setExecuted() {
         this.executed = true;
         this.runnable = false;
+        this.done = false;
     }
 
-    // setting a process to done would disable it from being runnable
-    // also sets executed to true just in case
+    /**
+     * Set the process to done, disable it from being runnable
+     * Set executed to true just in case
+     */
     public void setDone() {
         this.done = true;
         this.executed = true;
         this.runnable = false;
     }
 
+    /**
+     * Set the process to runnable
+     * Set executed and done to false just in case
+     */
     public void setRunnable() {
         this.runnable = true;
+        this.executed = false;
+        this.done = false;
+    }
+
+    public boolean isTerminated() {
+        return terminated;
     }
 
     public boolean isRunnable() {
@@ -65,6 +98,10 @@ public class ProcessGraphNode {
 
     public boolean isExecuted() {
         return executed;
+    }
+
+    public String getTerminationMsg() {
+        return terminationMessage;
     }
 
     public void addChild(ProcessGraphNode child) {

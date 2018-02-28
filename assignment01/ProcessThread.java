@@ -13,7 +13,8 @@ public class ProcessThread extends Thread {
     private ProcessGraphNode node;
     private long sleepDuration;
     private ProcessBuilder pb = new ProcessBuilder();
-    private int finishStatus = 1;
+    private FinishStatus finishStatus = FinishStatus.NULL;
+    private String terminationMessage;
 
     public ProcessThread(ProcessGraphNode node, File workingDir, long sleepDuration) {
         this.node = node;
@@ -60,22 +61,26 @@ public class ProcessThread extends Thread {
 
             debugPrint(p);
 
-            // set finishStatus to 0 (normal)
-            finishStatus = 0;
+            // print finish message and set finishStatus to FINISHED (normal)
+            System.out.println("Process " + node.getNodeId() + " has finished execution.");
+            finishStatus = FinishStatus.FINISHED;
 
         } catch (IOException | InterruptedException ex) {
-            // print error and set finishStatus to -1 (error)
-            System.out.println("Process " + node.getNodeId() + " exited with an error: "
-                    + ex.getMessage() + ".");
-            finishStatus = -1;
+            // print error and set finishStatus to TERMINATED (error)
+            terminationMessage = ex.getMessage();
+            finishStatus = FinishStatus.TERMINATED;
         }
+    }
+
+    public String getTerminationMsg() {
+        return terminationMessage;
     }
 
     public ProcessGraphNode getNode() {
         return node;
     }
 
-    public int getFinishStatus() {
+    public FinishStatus getFinishStatus() {
         return finishStatus;
     }
 
