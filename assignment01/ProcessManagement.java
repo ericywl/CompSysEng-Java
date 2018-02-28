@@ -9,16 +9,18 @@ import java.util.*;
 
 public class ProcessManagement {
     // set the working directory and instructions file
-    private static File workingDirectory = new File("");
-    private static File instructionSet = new File("test2.txt");
+    private static File workingDirectory = new File("test_folder/graph-file");
+    private static File instructionSet = new File("graph-file");
     // set thread sleep duration in ms (for concurrency testing and better visualization)
     private static long sleepDuration = 0;
 
     // DO NOT EDIT VARIABLES BELOW THIS LINE
     // ========================================= //
 
-    // mapping between all nodes and their respective threads
-    private static Map<ProcessGraphNode, ProcessThread> threadsMap = new HashMap<>();
+    // set of threads to run
+    private static Set<ProcessThread> threads = new HashSet<>();
+    // set of threads that are done
+    private static Set<ProcessThread> finishedThreads = new HashSet<>();
 
     public static void main(String[] args) {
         parseArgs(args);
@@ -30,21 +32,40 @@ public class ProcessManagement {
         // ProcessGraph.printBasic();
 
         for (ProcessGraphNode node : ProcessGraph.nodes.values())
-            threadsMap.put(node, new ProcessThread(node, workingDirectory, sleepDuration));
+            threads.add(new ProcessThread(node, workingDirectory, sleepDuration));
 
-        manageThreads();
+        boolean success = manageThreads();
+        if (!success) {
+            // Program terminated pre-maturely
+            System.out.println("Program terminating due to the above error.");
+            return;
+        }
+
+        // Print success finish status
+        System.out.println("All processes finished successfully.");
     }
 
     /**
      * Schedule the processes while all nodes are not done executing
      */
-    private static void manageThreads() {
+    private static boolean manageThreads() {
         while (!allNodesFinished()) {
-            for (ProcessGraphNode node : threadsMap.keySet()) {
-                ProcessThread pThread = threadsMap.get(node);
-                // set node to done if thread finished
-                if (pThread.isFinished()) {
+            for (ProcessThread pThread : threads) {
+                if (finishedThreads.contains(pThread)) {
+                    continue;
+                }
+
+                ProcessGraphNode node = pThread.getNode();
+                // set node to done if thread finished successfully
+                if (pThread.getFinishStatus() == 0) {
                     node.setDone();
+                    finishedThreads.add(pThread);
+                    System.out.println("Process " + node.getNodeId() + " has finished execution.");
+                }
+
+                // exit manageThreads() if the finish status is -1
+                if (pThread.getFinishStatus() == -1) {
+                    return false;
                 }
 
                 /* set node to runnable if all parents finished execution
@@ -60,12 +81,12 @@ public class ProcessManagement {
             }
         }
 
-        // Print finish status
-        System.out.println("All processes finished successfully.");
+        return true;
     }
 
     /**
      * Parse the command line arguments if they are provided
+     *
      * @param args - the command line arguments
      */
     private static void parseArgs(String[] args) {
@@ -106,6 +127,7 @@ public class ProcessManagement {
 
     /**
      * Check if all nodes have finished execution
+     *
      * @return true if all nodes finished, else false
      */
     private static boolean allNodesFinished() {
