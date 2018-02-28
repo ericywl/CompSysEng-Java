@@ -13,6 +13,10 @@ public class ProcessManagement {
     private static File instructionSet = new File("test2.txt");
     // set thread sleep duration in ms (for concurrency testing and better visualization)
     private static long sleepDuration = 0;
+
+    // DO NOT EDIT VARIABLES BELOW THIS LINE
+    // ========================================= //
+
     // mapping between all nodes and their respective threads
     private static Map<ProcessGraphNode, ProcessThread> threadsMap = new HashMap<>();
 
