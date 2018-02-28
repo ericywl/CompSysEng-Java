@@ -69,7 +69,10 @@ public class ProcessThread extends Thread {
         return finished;
     }
 
-    // print process output to console or terminal for debugging
+    /**
+     * Print the output of the process
+     * @param p - the process to get information from
+     */
     private void debugPrint(Process p) {
         try {
             String line;
