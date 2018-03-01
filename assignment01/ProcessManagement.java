@@ -19,33 +19,17 @@ public class ProcessManagement {
     // DO NOT EDIT VARIABLES BELOW THIS LINE
     // ========================================= //
 
-    // set of threads to run
+    // set of threads to look after (ie. not yet run or still running)
     private static Set<ProcessThread> threads = new HashSet<>();
-    // set of threads that are done
-    private static Set<ProcessThread> finishedThreads = new HashSet<>();
+    // set of terminated nodes with terminated threads
+    private static Set<ProcessGraphNode> terminatedNodes = new HashSet<>();
 
     public static void main(String[] args) {
         parseArgs(args);
-
-        // parse the instruction file and construct a data structure, stored inside ProcessGraph class
-        ParseFile.generateGraph(new File(workingDirectory + "/" + instructionSet));
-        // print the graph
-        ProcessGraph.printGraph();
-
-        // initialize all threads
-        for (ProcessGraphNode node : ProcessGraph.nodes.values())
-            threads.add(new ProcessThread(node, workingDirectory, sleepDuration));
+        initGraphThreads();
 
         boolean success = manageThreads();
-        if (!success) {
-            // Program terminating pre-maturely
-            printTerminationMsgs();
-            System.out.println("Program terminating due to the above error(s).");
-            return;
-        }
-
-        // Print success finish status
-        System.out.println("All processes finished successfully.");
+        printFinalMessage(success);
     }
 
     /**
@@ -53,23 +37,21 @@ public class ProcessManagement {
      */
     private static boolean manageThreads() {
         while (!allNodesFinished()) {
-            for (ProcessThread pThread : threads) {
-                // check that the thread is not yet finished 
-                if (finishedThreads.contains(pThread)) {
-                    continue;
-                }
-
+            for (Iterator<ProcessThread> iter = threads.iterator(); iter.hasNext(); ) {
+                ProcessThread pThread = iter.next();
                 ProcessGraphNode node = pThread.getNode();
                 // set node to done if thread finished successfully
+                // remove the thread from observed threads
                 if (pThread.getFinishStatus() == FinishStatus.FINISHED) {
                     node.setDone();
-                    finishedThreads.add(pThread);
+                    iter.remove();
                 }
 
                 // exit manageThreads() if the finish status is TERMINATED
                 // check that other running threads have finished before terminating
                 if (pThread.getFinishStatus() == FinishStatus.TERMINATED) {
                     node.setTerminated(pThread.getTerminationMsg());
+                    terminatedNodes.add(node);
                     if (!someNodesStillRunning()) {
                         return false;
                     }
@@ -94,6 +76,7 @@ public class ProcessManagement {
 
     /**
      * Parse the command line arguments if they are provided
+     *
      * @param args - the command line arguments
      */
     private static void parseArgs(String[] args) {
@@ -136,6 +119,7 @@ public class ProcessManagement {
 
     /**
      * Check if all nodes have finished execution
+     *
      * @return true if all nodes finished, else false
      */
     private static boolean allNodesFinished() {
@@ -149,6 +133,7 @@ public class ProcessManagement {
 
     /**
      * Check if there are still nodes running
+     *
      * @return true if some nodes are still running, else false
      */
     private static boolean someNodesStillRunning() {
@@ -161,15 +146,36 @@ public class ProcessManagement {
     }
 
     /**
-     * Function to print out the termination messages (if there is any error)
+     * Function to print out the final messages
+     * If there's error print out the thread termination messages
      */
-    private static void printTerminationMsgs() {
-        for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
-            if (node.isTerminated()) {
+    private static void printFinalMessage(boolean success) {
+        if (!success) {
+            // Program terminating pre-maturely
+            for (ProcessGraphNode node : terminatedNodes) {
                 String msg = String.format("Process %d terminated with an error: %s",
                         node.getNodeId(), node.getTerminationMsg());
                 System.out.println(msg);
             }
+            System.out.println("Program terminating due to the above error(s).");
+            return;
         }
+
+        // Print success finish status
+        System.out.println("All processes finished successfully.");
+    }
+
+    /**
+     * Initialize the graph and print it out
+     */
+    private static void initGraphThreads() {
+        // parse the instruction file and construct a data structure, stored inside ProcessGraph class
+        ParseFile.generateGraph(new File(workingDirectory + "/" + instructionSet));
+        // print the graph
+        ProcessGraph.printGraph();
+
+        // initialize all threads
+        for (ProcessGraphNode node : ProcessGraph.nodes.values())
+            threads.add(new ProcessThread(node, workingDirectory, sleepDuration));
     }
 }
