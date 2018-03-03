@@ -11,8 +11,8 @@ public class ProcessManagement {
     // set the working directory and instructions file
     private static File workingDirectory = new File("/Users/ericyap/Dropbox/SUTD" +
             "/50.005_computer_system_engineering" +
-            "/week02/assignment01/submit/src/test_folder/test2");
-    private static File instructionSet = new File("test2.txt");
+            "/week02/assignment01/submit/src/test_folder/graph-file");
+    private static File instructionSet = new File("graph-file");
     // set thread sleep duration in ms (for concurrency testing and better visualization)
     private static long sleepDuration = 0;
 
@@ -123,12 +123,7 @@ public class ProcessManagement {
      * @return true if all nodes finished, else false
      */
     private static boolean allNodesFinished() {
-        for (ProcessGraphNode node : ProcessGraph.nodes.values()) {
-            if (!node.isDone())
-                return false;
-        }
-
-        return true;
+        return threads.isEmpty();
     }
 
     /**
