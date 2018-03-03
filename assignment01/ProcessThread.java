@@ -55,14 +55,20 @@ public class ProcessThread extends Thread {
             int termVal = p.waitFor();
             // check for abnormal exit value
             if (termVal != 0) {
-                System.out.println("Process " + node.getNodeId() + " terminated abnormally.");
+                System.out.println(String.format(
+                        "Process %d (%s) terminated abnormally.",
+                        node.getNodeId(), node.getCommand()
+                ));
                 return;
             }
 
             debugPrint(p);
 
             // print finish message and set finishStatus to FINISHED (normal)
-            System.out.println("Process " + node.getNodeId() + " has finished execution.");
+            System.out.println(String.format(
+                    "Process %d (%s) has finished execution.",
+                    node.getNodeId(), node.getCommand()
+            ));
             finishStatus = FinishStatus.FINISHED;
 
         } catch (IOException | InterruptedException ex) {
