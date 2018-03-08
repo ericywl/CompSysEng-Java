@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 
 public class ProcessThread extends Thread {
     private ProcessGraphNode node;
+    private String[] commandArr;
     private long sleepDuration;
     private ProcessBuilder pb = new ProcessBuilder();
     private FinishStatus finishStatus = FinishStatus.NULL;
@@ -21,7 +22,7 @@ public class ProcessThread extends Thread {
         this.sleepDuration = sleepDuration;
 
         // set the command and directory of ProcessBuilder
-        String[] commandArr = node.getCommand().trim().split(" ");
+        this.commandArr = node.getCommand().trim().split(" ");
         pb.command(commandArr);
         pb.directory(workingDir);
 
@@ -45,26 +46,35 @@ public class ProcessThread extends Thread {
         }
     }
 
+    private String getNodeInfo() {
+        return String.format("%s <%s >%s",
+                node.getCommand(), node.getInputFile(), node.getOutputFile());
+    }
+
     @Override
     public void run() {
         try {
             // print start message
             System.out.println(String.format(
                     "Process %d started execution (%s) ",
-                    node.getNodeId(), node.getNodeInfo()
+                    node.getNodeId(), getNodeInfo()
             ));
 
             // sleep the thread (for concurrency testing)
             Thread.sleep(sleepDuration);
             // start the process and wait for it to finish
             Process p = pb.start();
-            int termVal = p.waitFor();
-            // check for abnormal exit value
-            if (termVal != 0) {
+            int terminationValue = p.waitFor();
+            if (terminationValue != 0) {
                 System.out.println(String.format(
                         "*** Process %d terminated abnormally (%s) ***",
-                        node.getNodeId(), node.getCommand()
+                        node.getNodeId(), getNodeInfo()
                 ));
+
+                terminationMessage = String.format("UNKNOWN (EXIT VALUE %d), " +
+                        "please consult the documentation of the '%s' command",
+                        terminationValue, commandArr[0]);
+                finishStatus = FinishStatus.TERMINATED;
                 return;
             }
 
@@ -73,12 +83,17 @@ public class ProcessThread extends Thread {
             // print finish message and set finishStatus to FINISHED (normal)
             System.out.println(String.format(
                     "Process %d finished execution (%s)",
-                    node.getNodeId(), node.getCommand()
+                    node.getNodeId(), getNodeInfo()
             ));
             finishStatus = FinishStatus.FINISHED;
 
         } catch (IOException | InterruptedException ex) {
             // print error and set finishStatus to TERMINATED (error)
+            System.out.println(String.format(
+                    "*** Process %d terminated abnormally (%s) ***",
+                    node.getNodeId(), getNodeInfo()
+            ));
+
             terminationMessage = ex.getMessage();
             finishStatus = FinishStatus.TERMINATED;
         }

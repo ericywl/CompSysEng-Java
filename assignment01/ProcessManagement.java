@@ -11,8 +11,8 @@ public class ProcessManagement {
     // set the working directory and instructions file
     private static File workingDirectory = new File("/Users/ericyap/Dropbox/SUTD" +
             "/50.005_computer_system_engineering" +
-            "/week02/assignment01/submit/src/test_folder/graph-file2");
-    private static File instructionSet = new File("graph-file2");
+            "/week02/assignment01/submit/src/test_folder/graph-file3");
+    private static File instructionSet = new File("graph-file3");
     // set thread sleep duration in ms (for concurrency testing and better visualization)
     private static long sleepDuration = 0;
 
@@ -146,6 +146,7 @@ public class ProcessManagement {
      */
     private static void printFinalMessage(boolean success) {
         if (!success) {
+            System.out.println();
             // Program terminating pre-maturely
             for (ProcessGraphNode node : terminatedNodes) {
                 String msg = String.format("Process %d terminated with an error: %s",
@@ -157,6 +158,7 @@ public class ProcessManagement {
         }
 
         // Print success finish status
+        System.out.println();
         System.out.println("All processes finished successfully.");
     }
 
