@@ -153,7 +153,7 @@ public class ProcessManagement {
                         node.getNodeId(), node.getTerminationMsg());
                 System.out.println(msg);
             }
-            System.out.println("Program terminating due to the above error(s).");
+            System.out.println("ProcessManagement terminating due to the above error(s).");
             return;
         }
 
