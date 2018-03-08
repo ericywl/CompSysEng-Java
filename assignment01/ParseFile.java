@@ -4,8 +4,6 @@
  * Date: 01/02/2018
  */
 
-import javafx.util.Pair;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -16,7 +14,7 @@ public class ParseFile {
     // this method generates a ProcessGraph and store in ProcessGraph Class
     public static void generateGraph(File inputFile) {
         try {
-            List<Pair<Integer, Integer>> edges = new ArrayList<>();
+            List<Integer[]> edges = new ArrayList<>();
             Scanner fileIn = new Scanner(inputFile);
             int index = 0;
             while (fileIn.hasNext()) {
@@ -36,7 +34,7 @@ public class ParseFile {
                     for (int i = 0; i < childrenId.length; i++) {
                         childrenId[i] = Integer.parseInt(childrenStringArray[i]);
                         ProcessGraph.addNode(childrenId[i]);
-                        edges.add(new Pair<>(index, childrenId[i]));
+                        edges.add(new Integer[]{index, childrenId[i]});
                     }
                 }
                 // setup command, input and output
@@ -48,9 +46,9 @@ public class ParseFile {
             }
 
             // setup children
-            for (Pair<Integer, Integer> edge : edges) {
-                ProcessGraph.nodes.get(edge.getKey())
-                        .addChild(ProcessGraph.nodes.get(edge.getValue()));
+            for (Integer[] edge : edges) {
+                ProcessGraph.nodes.get(edge[0])
+                        .addChild(ProcessGraph.nodes.get(edge[1]));
             }
 
             // setup parent
