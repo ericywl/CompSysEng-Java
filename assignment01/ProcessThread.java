@@ -48,6 +48,12 @@ public class ProcessThread extends Thread {
     @Override
     public void run() {
         try {
+            // print start message
+            System.out.println(String.format(
+                    "Process %d started execution (%s) ",
+                    node.getNodeId(), node.getNodeInfo()
+            ));
+
             // sleep the thread (for concurrency testing)
             Thread.sleep(sleepDuration);
             // start the process and wait for it to finish
@@ -56,7 +62,7 @@ public class ProcessThread extends Thread {
             // check for abnormal exit value
             if (termVal != 0) {
                 System.out.println(String.format(
-                        "Process %d (%s) terminated abnormally.",
+                        "*** Process %d terminated abnormally (%s) ***",
                         node.getNodeId(), node.getCommand()
                 ));
                 return;
@@ -66,7 +72,7 @@ public class ProcessThread extends Thread {
 
             // print finish message and set finishStatus to FINISHED (normal)
             System.out.println(String.format(
-                    "Process %d (%s) has finished execution.",
+                    "Process %d finished execution (%s)",
                     node.getNodeId(), node.getCommand()
             ));
             finishStatus = FinishStatus.FINISHED;
@@ -93,6 +99,7 @@ public class ProcessThread extends Thread {
     /**
      * Print the output of the process
      * (mainly for debugging purposes since the outputs are redirected)
+     *
      * @param p - the process to get information from
      */
     private void debugPrint(Process p) {

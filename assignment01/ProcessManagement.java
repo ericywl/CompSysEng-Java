@@ -11,8 +11,8 @@ public class ProcessManagement {
     // set the working directory and instructions file
     private static File workingDirectory = new File("/Users/ericyap/Dropbox/SUTD" +
             "/50.005_computer_system_engineering" +
-            "/week02/assignment01/submit/src/test_folder/graph-file");
-    private static File instructionSet = new File("graph-file");
+            "/week02/assignment01/submit/src/test_folder/graph-file2");
+    private static File instructionSet = new File("graph-file2");
     // set thread sleep duration in ms (for concurrency testing and better visualization)
     private static long sleepDuration = 0;
 

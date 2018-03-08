@@ -43,6 +43,7 @@ public class ProcessGraphNode {
 
     /**
      * Set the process to terminated, disabling it from running again
+     *
      * @param msg - the error message
      */
     public void setTerminated(String msg) {
@@ -150,5 +151,10 @@ public class ProcessGraphNode {
 
     public int getNodeId() {
         return nodeId;
+    }
+
+    public String getNodeInfo() {
+        return String.format("%s <%s >%s",
+                getCommand(), getInputFile(), getOutputFile());
     }
 }

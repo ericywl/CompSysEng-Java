@@ -39,7 +39,7 @@ public class ProcessGraph {
                 System.out.println("\nOutput File: " + node.getOutputFile() + "    ");
                 System.out.println("Runnable: " + node.isRunnable());
                 System.out.println("Executed: " + node.isDone());
-                System.out.println("\n");
+                System.out.println();
             }
         } catch (Exception e) {
             System.out.println("Exception!");
