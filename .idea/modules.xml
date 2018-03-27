@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CompSysEng-Java.iml" filepath="$PROJECT_DIR$/CompSysEng-Java.iml" />
       <module fileurl="file://$PROJECT_DIR$/assignment01/assignment01.iml" filepath="$PROJECT_DIR$/assignment01/assignment01.iml" />
+      <module fileurl="file://$PROJECT_DIR$/assignment02/assignment02.iml" filepath="$PROJECT_DIR$/assignment02/assignment02.iml" />
       <module fileurl="file://$PROJECT_DIR$/lab01_shell/lab01_shell.iml" filepath="$PROJECT_DIR$/lab01_shell/lab01_shell.iml" />
       <module fileurl="file://$PROJECT_DIR$/lab02_multithread/lab02_multithread.iml" filepath="$PROJECT_DIR$/lab02_multithread/lab02_multithread.iml" />
       <module fileurl="file://$PROJECT_DIR$/lab03_bankers/lab03_bankers.iml" filepath="$PROJECT_DIR$/lab03_bankers/lab03_bankers.iml" />
