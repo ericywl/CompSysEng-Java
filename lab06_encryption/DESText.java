@@ -6,7 +6,7 @@ import javax.xml.bind.DatatypeConverter;
 
 public class DESText {
     public static void main(String[] args) throws Exception {
-        String fileName = "lab06_encryption/files/smallSize.txt";
+        String fileName = "lab06_encryption/files/largeSize.txt";
         StringBuilder data = new StringBuilder();
         String line;
         BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName));

@@ -8,7 +8,7 @@ import java.security.*;
 public class DigitalSignature {
     public static void main(String[] args) throws Exception {
         // Read the text file and save to String data
-        String fileName = "lab06_encryption/files/smallSize.txt";
+        String fileName = "lab06_encryption/files/largeSize.txt";
         StringBuilder data = new StringBuilder();
         String line;
         BufferedReader bufferedReader = new BufferedReader( new FileReader(fileName));
@@ -25,16 +25,17 @@ public class DigitalSignature {
 
         // Message digest
         MessageDigest md = MessageDigest.getInstance("MD5");
-        byte[] digest = md.digest(data.toString().getBytes());
+        md.update(data.toString().getBytes());
+        byte[] digest = md.digest();
 
         // Encryption
-        Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-        cipher.init(Cipher.ENCRYPT_MODE,  privateKey);
-        byte[] encryptedBytes = cipher.doFinal(digest);
+        Cipher rsaCipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+        rsaCipher.init(Cipher.ENCRYPT_MODE,  privateKey);
+        byte[] encryptedBytes = rsaCipher.doFinal(digest);
 
         // Decryption
-        cipher.init(Cipher.DECRYPT_MODE,  publicKey);
-        byte[] decryptedBytes = cipher.doFinal(encryptedBytes);
+        rsaCipher.init(Cipher.DECRYPT_MODE,  publicKey);
+        byte[] decryptedBytes = rsaCipher.doFinal(encryptedBytes);
 
         System.out.println("=== ORIGINAL CONTENT ===");
         System.out.println(data);
@@ -50,8 +51,6 @@ public class DigitalSignature {
                 + DatatypeConverter.printBase64Binary(decryptedBytes));
         System.out.println( "Original digest byte length: " + decryptedBytes.length);
         System.out.println( "Signed digest byte length: " + encryptedBytes.length);
-
-
     }
 
 }

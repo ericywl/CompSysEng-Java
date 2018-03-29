@@ -6,7 +6,9 @@ import java.util.Arrays;
 import javax.crypto.*;
 
 public class DESImage {
-    private static final String inFileName = "SUTD.bmp";
+    private static final String inFileName = "triangle.bmp";
+    private static final String encryptionMode = "CBC";
+
     public static void main(String[] args) throws Exception {
         int imageWidth = 200;
         int imageLength = 200;
@@ -29,7 +31,7 @@ public class DESImage {
         System.out.println("Encrypting " + imgFile.getName() + "...");
         SecretKey key = KeyGenerator.getInstance("DES").generateKey();
         // TODO: you need to try both ECB and CBC mode, use PKCS5Padding padding method
-        Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
+        Cipher cipher = Cipher.getInstance("DES/" + encryptionMode + "/PKCS5Padding");
         cipher.init(Cipher.ENCRYPT_MODE, key);
 
         // define output BufferedImage, set size and format
@@ -57,7 +59,7 @@ public class DESImage {
         }
 
         // write outImage into file
-        File outImgFile = new File("lab06_encryption/files/En" + inFileName);
+        File outImgFile = new File("lab06_encryption/files/" + encryptionMode + "_" + "En" + inFileName);
         ImageIO.write(outImage, "BMP", outImgFile);
         System.out.println(imgFile.getName() + " encrypted to " + outImgFile.getName() + ".");
     }
