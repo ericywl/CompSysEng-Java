@@ -5,7 +5,6 @@ import java.nio.*;
 import java.util.Arrays;
 import javax.crypto.*;
 
-
 public class DESImage {
     private static final String inFileName = "SUTD.bmp";
     public static void main(String[] args) throws Exception {
@@ -30,8 +29,8 @@ public class DESImage {
         System.out.println("Encrypting " + imgFile.getName() + "...");
         SecretKey key = KeyGenerator.getInstance("DES").generateKey();
         // TODO: you need to try both ECB and CBC mode, use PKCS5Padding padding method
-        Cipher ecipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
-        ecipher.init(Cipher.ENCRYPT_MODE, key);
+        Cipher cipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
+        cipher.init(Cipher.ENCRYPT_MODE, key);
 
         // define output BufferedImage, set size and format
         BufferedImage outImage = new BufferedImage(imageWidth, imageLength, BufferedImage.TYPE_3BYTE_BGR);
@@ -47,7 +46,7 @@ public class DESImage {
             }
 
             // encrypt each column or row bytes
-            byte[] encryptedByteArr = ecipher.doFinal(eachWidthPixel);
+            byte[] encryptedByteArr = cipher.doFinal(eachWidthPixel);
             // convert the encrypted byte[] back into int[] and write to outImage (use setRGB)
             for (int idy = 0; idy < imageLength; idy++) {
                 byte[] buf = Arrays.copyOfRange(encryptedByteArr, idy * 4, idy * 4 + 4);
