@@ -10,7 +10,9 @@ public class DESImageSolution {
         int image_width = 200;
         int image_length = 200;
         // read image file and save pixel value into int[][] imageArray
-        BufferedImage img = ImageIO.read(new File("SUTD.bmp"));
+        File imgFile = new File("lab06_encryption/files/SUTD.bmp");
+        BufferedImage img = ImageIO.read(imgFile);
+        System.out.println("Reading " + imgFile.getName() + "...");
         image_width = img.getWidth();
         image_length = img.getHeight();
         // byte[][] imageArray = new byte[image_width][image_length];
@@ -23,10 +25,10 @@ public class DESImageSolution {
         }
 
         // generate secret key using DES algorithm
+        System.out.println("Encrypting " + imgFile.getName() + "...");
         SecretKey key = KeyGenerator.getInstance("DES").generateKey();
-
         // TODO: you need to try both ECB and CBC mode, use PKCS5Padding padding method
-        Cipher ecipher = Cipher.getInstance("DES/CBC/PKCS5Padding");
+        Cipher ecipher = Cipher.getInstance("DES/ECB/PKCS5Padding");
         ecipher.init(Cipher.ENCRYPT_MODE, key);
 
         // define output BufferedImage, set size and format
@@ -54,6 +56,8 @@ public class DESImageSolution {
             }
         }
         // write outImage into file
-        ImageIO.write(outImage, "BMP", new File("EnSUTD.bmp"));
+        File outImgFile = new File("lab06_encryption/files/EnSUTD.bmp");
+        ImageIO.write(outImage, "BMP", outImgFile);
+        System.out.println(imgFile.getName() + " encrypted to " + outImgFile.getName() + ".");
     }
 }

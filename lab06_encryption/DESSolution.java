@@ -9,7 +9,7 @@ import javax.xml.bind.DatatypeConverter;
 
 public class DESSolution {
     public static void main(String[] args) throws Exception {
-        String fileName = "smallSize.txt";
+        String fileName = "lab06_encryption/files/smallSize.txt";
         StringBuilder data = new StringBuilder();
         String line;
         BufferedReader bufferedReader = new BufferedReader(new FileReader(fileName));
@@ -17,6 +17,7 @@ public class DESSolution {
             data.append("\n").append(line);
         }
         System.out.println("Original content: " + data);
+        System.out.println();
 
         // generate secret key using DES algorithm
         SecretKey key = KeyGenerator.getInstance("DES").generateKey();
@@ -25,14 +26,16 @@ public class DESSolution {
         Cipher ecipher = Cipher.getInstance("DES");
         ecipher.init(Cipher.ENCRYPT_MODE, key);
 
-        String plaintext = data.toString();
         // do encryption, by calling method Cipher.doFinal().
+        String plaintext = data.toString();
         byte[] encryptedBytes = ecipher.doFinal(plaintext.getBytes());
-        System.out.println(encryptedBytes.length);
-        // TODO: compare the length of file smallSize.txt and largeSize.txt
 
         String base64format = DatatypeConverter.printBase64Binary(encryptedBytes);
         System.out.println("Cipher text: " + base64format);
+        System.out.println("Cipher text length: " + encryptedBytes.length);
+        // TODO: compare the length of file smallSize.txt and largeSize.txt
+        System.out.println();
+
         // create cipher object, initialize the ciphers with the given key,
         // choose decryption mode as DES
         Cipher dcipher = Cipher.getInstance("DES");
