@@ -48,21 +48,13 @@ public class Client {
 
         /* REQUEST FOR SIGNED CERTIFICATE */
         System.out.println(" > Requesting signed certificate...");
-        byte[] serverSignedCert = retrieveSignedCert();
+        X509Certificate serverCert = retrieveSignedCert();
         System.out.println(" > Signed certificate received.");
 
         /* VERIFY SERVER CERTIFICATE AND GET PUBLIC KEY */
-        X509Certificate serverCert = null;
-        try {
-            CertificateFactory certFac = CertificateFactory.getInstance("X.509");
-            ByteArrayInputStream bins = new ByteArrayInputStream(serverSignedCert);
-            serverCert = (X509Certificate) certFac.generateCertificate(bins);
-        } catch (CertificateException e) {
-            e.printStackTrace();
-        }
-
         if (serverCert == null)
             throw new NullPointerException("Server certificate should not be null.");
+
         boolean isVerifiedCert = verifyServerCert(serverCert);
         if (!isVerifiedCert) {
             System.out.println("Authentication failed - invalid server certificate.");
@@ -98,7 +90,12 @@ public class Client {
         return nonceResponse;
     }
 
-    private static byte[] retrieveSignedCert() throws IOException {
+    /**
+     * Request the server to send it's signed certificate
+     * @return server's signed X509Certificate
+     * @throws IOException if data stream ends prematurely
+     */
+    private static X509Certificate retrieveSignedCert() throws IOException {
         toServer.write(APConstants.REQ_SIGNED_CERT.getBytes());
         toServer.flush();
 
@@ -108,9 +105,22 @@ public class Client {
         if (bytesRead < 0)
             throw new IOException("Data stream ended prematurely.");
 
-        return serverSignedCert;
+        try {
+            CertificateFactory certFac = CertificateFactory.getInstance("X.509");
+            ByteArrayInputStream bins = new ByteArrayInputStream(serverSignedCert);
+            return (X509Certificate) certFac.generateCertificate(bins);
+        } catch (CertificateException e) {
+            e.printStackTrace();
+        }
+
+        return null;
     }
 
+    /**
+     * Verify the server's certificate with the CA certificate
+     * @param serverCert the certificate to be verified
+     * @return true if valid certificate, else false
+     */
     private static boolean verifyServerCert(X509Certificate serverCert) {
         try {
             InputStream fileInputStream = new FileInputStream(CA_CERT_FILE);
@@ -132,6 +142,12 @@ public class Client {
         }
     }
 
+    /**
+     * Decrypt the nonce response obtained from the server
+     * @param nonceResponse the bytes of the encrypted nonce response from server
+     * @param serverKey the server's public key obtained from the server's certificate
+     * @return the decrypted nonce response
+     */
     private static byte[] decryptNonceResponse(byte[] nonceResponse, PublicKey serverKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -144,6 +160,10 @@ public class Client {
         }
     }
 
+    /**
+     * Generate a nonce for use in validating the server
+     * @return the bytes of nonce
+     */
     private static byte[] generateNonce() {
         try {
             byte[] nonce = new byte[64];
@@ -157,6 +177,10 @@ public class Client {
         }
     }
 
+    /**
+     * Terminate the connection (invalid server or finished transfer)
+     * @throws IOException if any of the statements throw IOException
+     */
     private static void terminate() throws IOException {
         toServer.write(APConstants.TERMINATION_MSG.getBytes());
         toServer.flush();

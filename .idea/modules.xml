@@ -9,6 +9,7 @@
       <module fileurl="file://$PROJECT_DIR$/lab02_multithread/lab02_multithread.iml" filepath="$PROJECT_DIR$/lab02_multithread/lab02_multithread.iml" />
       <module fileurl="file://$PROJECT_DIR$/lab03_bankers/lab03_bankers.iml" filepath="$PROJECT_DIR$/lab03_bankers/lab03_bankers.iml" />
       <module fileurl="file://$PROJECT_DIR$/lab04_file_op/lab04_file_op.iml" filepath="$PROJECT_DIR$/lab04_file_op/lab04_file_op.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lab06_encryption/lab06_encryption.iml" filepath="$PROJECT_DIR$/lab06_encryption/lab06_encryption.iml" />
     </modules>
   </component>
 </project>
