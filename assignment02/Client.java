@@ -14,18 +14,23 @@ public class Client {
     private static DataOutputStream toServer;
     private static DataInputStream fromServer;
 
-    private static PublicKey serverKey = null;
-
-    public static void main(String[] args) {
+    public static void main(String[] args) throws Exception {
         try {
             connectToServer(SERVER_NAME, SERVER_PORT);
             boolean isAuthServer = authenticateServer();
-            if (isAuthServer) {
-                System.out.println(serverKey.getFormat());
+            if (!isAuthServer) {
+                terminateConnection();
+                return;
             }
 
         } catch (IOException e) {
             e.printStackTrace();
+        } finally {
+            try {
+                terminateConnection();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -43,51 +48,57 @@ public class Client {
         /* SEND NONCE */
         System.out.println(" > Sending nonce...");
         byte[] clientNonce = generateNonce();
-        byte[] nonceResponse = exchangeNonce(clientNonce);
-        System.out.println(" > Encrypted nonce response received.");
+        byte[] encryptedNonceResponse = exchangeNonceWithServer(clientNonce);
+        System.out.println(" >> Encrypted nonce response received.");
 
         /* REQUEST FOR SIGNED CERTIFICATE */
         System.out.println(" > Requesting signed certificate...");
         X509Certificate serverCert = retrieveSignedCert();
-        System.out.println(" > Signed certificate received.");
+        if (serverCert == null) return false;
+        System.out.println(" >> Signed certificate received.");
 
         /* VERIFY SERVER CERTIFICATE AND GET PUBLIC KEY */
-        if (serverCert == null)
-            throw new NullPointerException("Server certificate should not be null.");
-
         boolean isVerifiedCert = verifyServerCert(serverCert);
         if (!isVerifiedCert) {
             System.out.println("Authentication failed - invalid server certificate.");
-            terminate();
             return false;
         }
+        PublicKey serverKey = serverCert.getPublicKey();
 
         /* VERIFY NONCE */
-        serverKey = serverCert.getPublicKey();
-        byte[] decryptedNonceResponse = decryptNonceResponse(nonceResponse, serverKey);
+        byte[] decryptedNonceResponse = decryptNonceResponse(encryptedNonceResponse, serverKey);
         if (!Arrays.equals(clientNonce, decryptedNonceResponse)) {
             System.out.println("Authentication failed - invalid nonce response.");
-            terminate();
             return false;
         }
 
+        /* AUTHENTICATION COMPLETE */
+        toServer.writeInt(APConstants.AUTH_DONE.getBytes().length);
+        toServer.flush();
+
+        toServer.write(APConstants.AUTH_DONE.getBytes());
+        toServer.flush();
         System.out.println("Server is authenticated!");
         return true;
     }
 
-    private static byte[] exchangeNonce(byte[] nonce) throws IOException {
+    private static byte[] exchangeNonceWithServer(byte[] nonce) throws IOException {
         if (nonce == null)
             throw new NullPointerException("Nonce should not be null.");
+
+        toServer.writeInt(nonce.length);
+        toServer.flush();
+
         toServer.write(nonce);
         toServer.flush();
 
-        int bytesRead;
-        byte[] nonceResponse = new byte[64];
-        bytesRead = fromServer.read(nonceResponse);
+        int responseLength = fromServer.readInt();
+        byte[] encryptedNonceResponse = new byte[responseLength];
+        int bytesRead = fromServer.read(encryptedNonceResponse);
         if (bytesRead < 0)
             throw new IOException("Data stream ended prematurely.");
 
-        return nonceResponse;
+        return encryptedNonceResponse;
     }
 
     /**
@@ -96,24 +107,32 @@ public class Client {
      * @throws IOException if data stream ends prematurely
      */
     private static X509Certificate retrieveSignedCert() throws IOException {
+        toServer.writeInt(APConstants.REQ_SIGNED_CERT.getBytes().length);
+        toServer.flush();
+
         toServer.write(APConstants.REQ_SIGNED_CERT.getBytes());
         toServer.flush();
 
-        int certSize = fromServer.readInt();
-        byte[] serverSignedCert = new byte[certSize];
-        int bytesRead = fromServer.read(serverSignedCert);
+        int replySize = fromServer.readInt();
+        byte[] serverReply = new byte[replySize];
+
+        int bytesRead = fromServer.read(serverReply);
         if (bytesRead < 0)
             throw new IOException("Data stream ended prematurely.");
 
+        if (Arrays.equals(serverReply, APConstants.TERMINATION_MSG.getBytes())) {
+            System.out.println("Server terminated connection.");
+            return null;
+        }
+
         try {
             CertificateFactory certFac = CertificateFactory.getInstance("X.509");
-            ByteArrayInputStream bins = new ByteArrayInputStream(serverSignedCert);
+            ByteArrayInputStream bins = new ByteArrayInputStream(serverReply);
             return (X509Certificate) certFac.generateCertificate(bins);
         } catch (CertificateException e) {
             e.printStackTrace();
+            return null;
         }
-
-        return null;
     }
 
     /**
@@ -181,9 +200,13 @@ public class Client {
      * Terminate the connection (invalid server or finished transfer)
      * @throws IOException if any of the statements throw IOException
      */
-    private static void terminate() throws IOException {
+    private static void terminateConnection() throws IOException {
+        toServer.writeInt(APConstants.TERMINATION_MSG.getBytes().length);
+        toServer.flush();
+
         toServer.write(APConstants.TERMINATION_MSG.getBytes());
         toServer.flush();
+
         toServer.close();
         fromServer.close();
         clientSocket.close();
