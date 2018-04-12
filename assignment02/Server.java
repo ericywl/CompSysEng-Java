@@ -8,26 +8,40 @@ import java.security.KeyFactory;
 import java.security.PrivateKey;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Arrays;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 
 public class Server {
     private static final String PRIVATE_DER_FILE = "files/privateServer.der";
     private static final String SERVER_CERT_FILE = "files/server.crt";
     private static final Integer SERVER_PORT = 4321;
 
-    private static ServerSocket serverSocket;
-    private static Socket clientSocket = null;
-    private static DataOutputStream toClient;
-    private static DataInputStream fromClient;
+    private static final ExecutorService pool = Executors.newCachedThreadPool();
 
+    @SuppressWarnings("InfiniteLoopStatement")
     public static void main(String[] args) {
         try {
-            serverSocket = new ServerSocket(SERVER_PORT);
-            while (clientSocket == null) {
-                acceptConnection();
-                boolean authDone = startAuthProtocol();
-                if (!authDone) {
-                    terminateConnection();
-                }
+            ServerSocket serverSocket = new ServerSocket(SERVER_PORT);
+            while (true) {
+                System.out.println("Awaiting client to connect...");
+                Socket clientSocket = serverSocket.accept();
+                // start new thread to do auth protocol
+                System.out.println("Client connected. Starting new thread for authentication protocol...");
+                pool.execute(() -> {
+                    try {
+                        DataOutputStream toClient
+                                = new DataOutputStream(clientSocket.getOutputStream());
+                        DataInputStream fromClient
+                                = new DataInputStream(clientSocket.getInputStream());
+
+                        boolean authDone = startAuthProtocol(toClient, fromClient);
+                        if (!authDone)
+                            terminateConnection(toClient, fromClient, clientSocket);
+
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
             }
 
         } catch (IOException e) {
@@ -35,28 +49,19 @@ public class Server {
         }
     }
 
-    private static void acceptConnection() throws IOException {
-        System.out.println("Awaiting client to connect...");
-
-        clientSocket = serverSocket.accept();
-        toClient = new DataOutputStream(clientSocket.getOutputStream());
-        fromClient = new DataInputStream(clientSocket.getInputStream());
-    }
-
-    private static boolean startAuthProtocol() throws IOException {
-        System.out.println("Client connected. Starting authentication protocol...");
-
+    private static boolean startAuthProtocol(DataOutputStream toClient, DataInputStream fromClient)
+            throws IOException {
         /* RECEIVE CLIENT NONCE */
-        System.out.println(" > Receiving nonce...");
+        System.out.println("Thread " + Thread.currentThread().getId() + " > Receiving nonce...");
         int clientNonceLength = fromClient.readInt();
         byte[] clientNonce = new byte[clientNonceLength];
         int bytesRead = fromClient.read(clientNonce);
         if (bytesRead < 0)
             throw new IOException("Data stream ended prematurely.");
-        System.out.println(" >> Client nonce received.");
+        System.out.println("Thread " + Thread.currentThread().getId() + " >> Client nonce received.");
 
         /* ENCRYPT NONCE AND SEND BACK */
-        System.out.println(" > Encrypting client nonce...");
+        System.out.println("Thread " + Thread.currentThread().getId() + " > Encrypting client nonce...");
         byte[] encryptedNonce = encryptNonce(clientNonce);
         if (encryptedNonce == null)
             throw new NullPointerException("Encrypted nonce should not be null.");
@@ -65,14 +70,15 @@ public class Server {
 
         toClient.write(encryptedNonce);
         toClient.flush();
-        System.out.println(" >> Sent encrypted nonce back to client.");
+        System.out.println("Thread " + Thread.currentThread().getId() +
+                " >> Sent encrypted nonce back to client.");
 
         /* LISTEN FOR SIGNED CERT REQUEST AND SEND SIGNED CERT */
-        System.out.println(" > Waiting to send signed certificate...");
-        boolean isValidRequest = readRequest();
+        System.out.println("Thread " + Thread.currentThread().getId() + " > Waiting to send signed certificate...");
+        boolean isValidRequest = readRequest(fromClient);
         if (!isValidRequest) return false;
-        sendSignedCert();
-        System.out.println(" >> Signed certificate sent.");
+        sendSignedCert(toClient);
+        System.out.println("Thread " + Thread.currentThread().getId() + " >> Signed certificate sent.");
 
         /* LISTEN FOR PROCEED CALL */
         int replyLength = fromClient.readInt();
@@ -82,11 +88,12 @@ public class Server {
             throw new IOException("Data stream ended prematurely.");
 
         if (!Arrays.equals(reply, APConstants.AUTH_DONE.getBytes())) {
-            System.out.println("Client terminated connection.");
+            System.out.println("Thread " + Thread.currentThread().getId() +
+                    " - Client terminated connection.");
             return false;
         }
 
-        System.out.println("Authentication complete.");
+        System.out.println("Thread " + Thread.currentThread().getId() + " - Authentication complete.");
         return true;
     }
 
@@ -107,7 +114,7 @@ public class Server {
         }
     }
 
-    private static boolean readRequest() throws IOException {
+    private static boolean readRequest(DataInputStream fromClient) throws IOException {
         int byteLength = fromClient.readInt();
         byte[] request = new byte[byteLength];
 
@@ -123,7 +130,7 @@ public class Server {
         return true;
     }
 
-    private static void sendSignedCert() {
+    private static void sendSignedCert(DataOutputStream toClient) {
         try {
             File serverCertFile = new File(SERVER_CERT_FILE);
             byte[] serverCertBytes = new byte[(int) serverCertFile.length()];
@@ -146,7 +153,8 @@ public class Server {
         }
     }
 
-    private static void terminateConnection() throws IOException {
+    private static void terminateConnection(DataOutputStream toClient, DataInputStream fromClient,
+                                     Socket clientSocket) throws IOException {
         toClient.writeInt(APConstants.TERMINATION_MSG.getBytes().length);
         toClient.flush();
 

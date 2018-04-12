@@ -18,10 +18,8 @@ public class Client {
         try {
             connectToServer(SERVER_NAME, SERVER_PORT);
             boolean isAuthServer = authenticateServer();
-            if (!isAuthServer) {
+            if (!isAuthServer)
                 terminateConnection();
-                return;
-            }
 
         } catch (IOException e) {
             e.printStackTrace();
