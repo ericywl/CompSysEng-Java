@@ -61,12 +61,29 @@ public class Client {
                 return;
             }
 
-            /* SEND ENCRYPTED FILE */
-            sendEncryptedFileBytes(file, serverKey);
+            /* SEND ENCRYPTED FILE and MESSAGE DIGEST */
+            byte[] fileBytes = new byte[(int) file.length()];
+            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(file));
+            int bytesRead = bis.read(fileBytes, 0, fileBytes.length);
+            if (bytesRead < 0)
+                throw new IOException("Input stream ended prematurely.");
+            bis.close();
+
+            sendEncryptedMessageDigest(fileBytes, serverKey);
+            writeBytesToServer(APConstants.TRANSFER_MD_DONE.getBytes());
+            sendEncryptedFileBytes(fileBytes, serverKey);
             writeBytesToServer(APConstants.TRANSFER_DONE.getBytes());
 
-            boolean transferReceived = checkMessage(APConstants.TRANSFER_RECEIVED);
-            if (!transferReceived) {
+            int length = fromServer.readInt();
+            byte[] serverMsg = new byte[length];
+            fromServer.readFully(serverMsg);
+
+            if (Arrays.equals(serverMsg, APConstants.FILE_PROBLEM.getBytes())) {
+                System.out.println("File is corrupted during transfer. Please try again.");
+                return;
+            }
+
+            if (!Arrays.equals(serverMsg, APConstants.TRANSFER_RECEIVED.getBytes())) {
                 System.out.println("Server did not receive the file. Please try again.");
                 return;
             }
@@ -79,25 +96,33 @@ public class Client {
         }
     }
 
-    private static void sendEncryptedFileBytes(File inputFile, PublicKey serverKey) {
+    private static void sendEncryptedFileBytes(byte[] fileBytes, PublicKey serverKey) {
         try {
-            byte[] fileBuf = new byte[(int) inputFile.length()];
-            BufferedInputStream bis = new BufferedInputStream(new FileInputStream(inputFile));
-            int bytesRead = bis.read(fileBuf, 0, fileBuf.length);
-            if (bytesRead < 0)
-                throw new IOException("Input stream ended prematurely.");
-            bis.close();
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, serverKey);
 
-            for (int start = 0, end; start < fileBuf.length; start += BLOCK_SIZE) {
-                end = Math.min(start + BLOCK_SIZE, fileBuf.length);
-                Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-                cipher.init(Cipher.ENCRYPT_MODE, serverKey);
-                byte[] tempBlockBuffer = cipher.doFinal(fileBuf, start, end - start);
+            for (int start = 0, end; start < fileBytes.length; start += BLOCK_SIZE) {
+                end = Math.min(start + BLOCK_SIZE, fileBytes.length);
+                byte[] tempBlockBuffer = cipher.doFinal(fileBytes, start, end - start);
                 writeBytesToServer(tempBlockBuffer);
             }
 
-        } catch (IOException e) {
-            System.out.println(inputFile.getName() + " not found.");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void sendEncryptedMessageDigest(byte[] fileBytes, PublicKey serverKey) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(fileBytes);
+            byte[] digest = md.digest();
+
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, serverKey);
+            byte[] encryptedDigest = cipher.doFinal(digest);
+            writeBytesToServer(encryptedDigest);
+
         } catch (Exception e) {
             e.printStackTrace();
         }
@@ -307,9 +332,7 @@ public class Client {
     private static boolean checkMessage(String message) throws IOException {
         int length = fromServer.readInt();
         byte[] serverMsg = new byte[length];
-        int bytesRead = fromServer.read(serverMsg);
-        if (bytesRead < 0)
-            throw new IOException("Data stream ended prematurely.");
+        fromServer.readFully(serverMsg);
 
         return Arrays.equals(serverMsg, message.getBytes());
     }

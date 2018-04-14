@@ -7,6 +7,7 @@ import java.net.SocketException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
+import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.spec.InvalidKeySpecException;
@@ -69,15 +70,33 @@ public class Server {
             // System.out.println("Thread " + Thread.currentThread().getId() + " > Receiving file...");
             boolean transferStart = checkMessage(APConstants.TRANFER_START, fromClient);
             if (!transferStart) {
-                System.out.println("Client is not transferring file.");
+                System.out.println("Thread " + Thread.currentThread().getId() + "Client is not transferring file.");
+                return;
             }
 
             writeBytesToClient(APConstants.TRANSFER_ACCEPT.getBytes(), toClient);
 
             String fileName = fromClient.readUTF();
-            byte[] fileBytes = receiveAndDecryptBytes(toClient, fromClient, privateKey);
-            if (fileBytes == null)
-                throw new NullPointerException("Decrypted file bytes should not be null.");
+            writeBytesToClient(APConstants.TRANSFER_CONTINUE.getBytes(), toClient);
+
+            byte[] messageDigest = receiveAndDecryptDigest(fromClient, privateKey);
+            boolean transferMDDone = checkMessage(APConstants.TRANSFER_MD_DONE, fromClient);
+            if (!transferMDDone) {
+                System.out.println("Thread " + Thread.currentThread().getId()
+                        + "Client stopped transferring the file.");
+                return;
+            }
+
+            byte[] fileBytes = receiveAndDecryptFile(toClient, fromClient, privateKey);
+            if (fileBytes == null || messageDigest == null)
+                throw new NullPointerException("Decrypted bytes should not be null.");
+
+            boolean sameDigest = generateAndCompareDigest(fileBytes, messageDigest);
+            if (!sameDigest) {
+                System.out.println("Thread " + Thread.currentThread().getId() + " - File corrupted.");
+                writeBytesToClient(APConstants.FILE_PROBLEM.getBytes(), toClient);
+                return;
+            }
             // System.out.println("Thread " + Thread.currentThread().getId() + " >> File received.");
 
             // System.out.println("Thread " + Thread.currentThread().getId() + " > Writing file.");
@@ -92,11 +111,9 @@ public class Server {
         }
     }
 
-    private static byte[] receiveAndDecryptBytes(DataOutputStream toClient, DataInputStream fromClient,
-                                                 PrivateKey privateKey) {
+    private static byte[] receiveAndDecryptFile(DataOutputStream toClient, DataInputStream fromClient,
+                                                PrivateKey privateKey) {
         try {
-            writeBytesToClient(APConstants.TRANSFER_CONTINUE.getBytes(), toClient);
-
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
 
@@ -124,6 +141,37 @@ public class Server {
         }
 
         return null;
+    }
+
+    private static byte[] receiveAndDecryptDigest(DataInputStream fromClient, PrivateKey privateKey) {
+        try {
+            int length = fromClient.readInt();
+            byte[] encryptedDigest = new byte[length];
+            fromClient.readFully(encryptedDigest);
+
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.DECRYPT_MODE, privateKey);
+            return cipher.doFinal(encryptedDigest);
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    private static boolean generateAndCompareDigest(byte[] fileBytes, byte[] receivedDigest) {
+        try {
+            MessageDigest md = MessageDigest.getInstance("MD5");
+            md.update(fileBytes);
+            byte[] digest = md.digest();
+            return Arrays.equals(digest, receivedDigest);
+
+        } catch (NoSuchAlgorithmException e) {
+            e.printStackTrace();
+        }
+
+        return false;
     }
 
     /* AUTH */
@@ -186,7 +234,8 @@ public class Server {
         fromClient.readFully(request);
 
         if (!Arrays.equals(request, APConstants.REQ_SIGNED_CERT.getBytes())) {
-            System.out.println("Invalid request. Terminating connection.");
+            System.out.println("Thread " + Thread.currentThread().getId()
+                    + "Invalid request. Terminating connection.");
             return false;
         }
 
