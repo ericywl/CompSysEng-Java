@@ -30,6 +30,7 @@ public class CP1Client {
         }
     }
 
+    /* FILE */
     private static void transferEncryptedFile(String fileLocation, PublicKey serverKey) {
         try {
             boolean transferReady = checkMessage(APConstants.TRANSFER_READY);
@@ -96,6 +97,11 @@ public class CP1Client {
         }
     }
 
+    /**
+     * Split the file bytes into blocks, encrypt them and send to server
+     * @param fileBytes the file bytes to be split
+     * @param serverKey the key to use for encryption
+     */
     private static void sendEncryptedFileBytes(byte[] fileBytes, PublicKey serverKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -112,6 +118,11 @@ public class CP1Client {
         }
     }
 
+    /**
+     * Compute the message digest, encrypt it and send it to the server
+     * @param fileBytes the file bytes used to compute the digest
+     * @param serverKey the key to use for encryption
+     */
     private static void sendEncryptedMessageDigest(byte[] fileBytes, PublicKey serverKey) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -128,18 +139,7 @@ public class CP1Client {
         }
     }
 
-    private static void connectToServer(String serverName, int serverPort) {
-        System.out.println("Connecting to " + serverName + ":" + serverPort + "...");
-
-        try {
-            clientSocket = new Socket(serverName, serverPort);
-            toServer = new DataOutputStream(clientSocket.getOutputStream());
-            fromServer = new DataInputStream(clientSocket.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
+    /* AUTH */
     private static PublicKey authenticateServerAndGetKey() {
         System.out.println("Authenticating server...");
 
@@ -316,6 +316,18 @@ public class CP1Client {
 
         } catch (SocketException ignored) {
 
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void connectToServer(String serverName, int serverPort) {
+        System.out.println("Connecting to " + serverName + ":" + serverPort + "...");
+
+        try {
+            clientSocket = new Socket(serverName, serverPort);
+            toServer = new DataOutputStream(clientSocket.getOutputStream());
+            fromServer = new DataInputStream(clientSocket.getInputStream());
         } catch (IOException e) {
             e.printStackTrace();
         }

@@ -67,7 +67,6 @@ public class CP1Server {
     private static void startFileTransfer(DataOutputStream toClient, DataInputStream fromClient,
                                           PrivateKey privateKey) {
         try {
-            // System.out.println("Thread " + Thread.currentThread().getId() + " > Receiving file...");
             boolean transferStart = checkMessage(APConstants.TRANSFER_START, fromClient);
             if (!transferStart) {
                 System.out.println("Thread " + Thread.currentThread().getId() + " - Client is not transferring file.");
@@ -97,9 +96,7 @@ public class CP1Server {
                 writeBytesToClient(APConstants.FILE_PROBLEM.getBytes(), toClient);
                 return;
             }
-            // System.out.println("Thread " + Thread.currentThread().getId() + " >> File received.");
 
-            // System.out.println("Thread " + Thread.currentThread().getId() + " > Writing file.");
             try {
                 Files.createDirectory(Paths.get("cp1server"));
                 Files.createFile(Paths.get("cp1server", fileName));
@@ -107,7 +104,6 @@ public class CP1Server {
 
             }
             Files.write(Paths.get("cp1server", fileName), fileBytes);
-            // System.out.println("Thread " + Thread.currentThread().getId() + " >> File written.");
 
             writeBytesToClient(APConstants.TRANSFER_RECEIVED.getBytes(), toClient);
             System.out.println("Thread " + Thread.currentThread().getId() + " - File transfer complete!");
@@ -117,6 +113,12 @@ public class CP1Server {
         }
     }
 
+    /**
+     * Receive blocks, decrypt them and form the complete file bytes
+     * @param fromClient the data input stream
+     * @param privateKey the private key used to decrypt
+     * @return the decrypted file bytes
+     */
     private static byte[] receiveAndDecryptFile(DataInputStream fromClient, PrivateKey privateKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
@@ -148,6 +150,12 @@ public class CP1Server {
         return null;
     }
 
+    /**
+     * Receive the encrypted digest and decrypt it
+     * @param fromClient the data input stream
+     * @param privateKey the key to use for decryption
+     * @return the decrypted message digest bytes
+     */
     private static byte[] receiveAndDecryptDigest(DataInputStream fromClient, PrivateKey privateKey) {
         try {
             int length = fromClient.readInt();
@@ -165,6 +173,12 @@ public class CP1Server {
         return null;
     }
 
+    /**
+     * Generate the message digest individually and compare with the received
+     * @param fileBytes the file bytes used to compute the digest
+     * @param receivedDigest the received messsage digest
+     * @return true if equals, else false
+     */
     private static boolean generateAndCompareDigest(byte[] fileBytes, byte[] receivedDigest) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
@@ -183,26 +197,20 @@ public class CP1Server {
     private static boolean startAuthProtocol(DataOutputStream toClient, DataInputStream fromClient,
                                              PrivateKey privateKey) throws IOException {
         /* RECEIVE CLIENT NONCE */
-        // System.out.println("Thread " + Thread.currentThread().getId() + " > Receiving nonce...");
         int clientNonceLength = fromClient.readInt();
         byte[] clientNonce = new byte[clientNonceLength];
         fromClient.readFully(clientNonce);
-        // System.out.println("Thread " + Thread.currentThread().getId() + " >> Client nonce received.");
 
         /* ENCRYPT NONCE AND SEND BACK */
-        // System.out.println("Thread " + Thread.currentThread().getId() + " > Encrypting client nonce...");
         byte[] encryptedNonce = encryptNonce(clientNonce, privateKey);
         if (encryptedNonce == null)
             throw new NullPointerException("Encrypted nonce should not be null.");
         writeBytesToClient(encryptedNonce, toClient);
-        // System.out.println("Thread " + Thread.currentThread().getId() + " >> Sent encrypted nonce back to client.");
 
         /* LISTEN FOR SIGNED CERT REQUEST AND SEND SIGNED CERT */
-        // System.out.println("Thread " + Thread.currentThread().getId() + " > Waiting to send signed certificate...");
         boolean isValidRequest = readRequest(fromClient);
         if (!isValidRequest) return false;
         sendSignedCert(toClient);
-        // System.out.println("Thread " + Thread.currentThread().getId() + " >> Signed certificate sent.");
 
         /* LISTEN FOR PROCEED CALL */
         int replyLength = fromClient.readInt();
