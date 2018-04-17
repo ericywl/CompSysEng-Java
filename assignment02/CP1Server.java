@@ -67,7 +67,7 @@ public class CP1Server {
                                           PrivateKey privateKey) {
         try {
             // System.out.println("Thread " + Thread.currentThread().getId() + " > Receiving file...");
-            boolean transferStart = checkMessage(APConstants.TRANFER_START, fromClient);
+            boolean transferStart = checkMessage(APConstants.TRANSFER_START, fromClient);
             if (!transferStart) {
                 System.out.println("Thread " + Thread.currentThread().getId() + "CP1Client is not transferring file.");
                 return;

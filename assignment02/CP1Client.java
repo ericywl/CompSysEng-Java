@@ -43,7 +43,7 @@ public class CP1Client {
 
             /* SEND TRANSFER START MESSAGE */
             System.out.println(" > Sending the file over...");
-            writeBytesToServer(APConstants.TRANFER_START.getBytes());
+            writeBytesToServer(APConstants.TRANSFER_START.getBytes());
 
             boolean transferAccept = checkMessage(APConstants.TRANSFER_ACCEPT);
             if (!transferAccept) {
