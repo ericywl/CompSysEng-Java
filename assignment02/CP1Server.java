@@ -3,6 +3,7 @@ import java.io.*;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.FileAlreadyExistsException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.KeyFactory;
@@ -69,7 +70,7 @@ public class CP1Server {
             // System.out.println("Thread " + Thread.currentThread().getId() + " > Receiving file...");
             boolean transferStart = checkMessage(APConstants.TRANSFER_START, fromClient);
             if (!transferStart) {
-                System.out.println("Thread " + Thread.currentThread().getId() + "CP1Client is not transferring file.");
+                System.out.println("Thread " + Thread.currentThread().getId() + " - Client is not transferring file.");
                 return;
             }
 
@@ -82,11 +83,11 @@ public class CP1Server {
             boolean transferMDDone = checkMessage(APConstants.TRANSFER_MD_DONE, fromClient);
             if (!transferMDDone) {
                 System.out.println("Thread " + Thread.currentThread().getId()
-                        + "CP1Client stopped transferring the file.");
+                        + " - Client stopped transferring the file.");
                 return;
             }
 
-            byte[] fileBytes = receiveAndDecryptFile(toClient, fromClient, privateKey);
+            byte[] fileBytes = receiveAndDecryptFile(fromClient, privateKey);
             if (fileBytes == null || messageDigest == null)
                 throw new NullPointerException("Decrypted bytes should not be null.");
 
@@ -99,9 +100,13 @@ public class CP1Server {
             // System.out.println("Thread " + Thread.currentThread().getId() + " >> File received.");
 
             // System.out.println("Thread " + Thread.currentThread().getId() + " > Writing file.");
-            Files.createDirectory(Paths.get("cp1server"));
-            Files.createFile(Paths.get("cp1server", fileName));
-            Files.write(Paths.get("server", fileName), fileBytes);
+            try {
+                Files.createDirectory(Paths.get("cp1server"));
+                Files.createFile(Paths.get("cp1server", fileName));
+            } catch (FileAlreadyExistsException ignored) {
+
+            }
+            Files.write(Paths.get("cp1server", fileName), fileBytes);
             // System.out.println("Thread " + Thread.currentThread().getId() + " >> File written.");
 
             writeBytesToClient(APConstants.TRANSFER_RECEIVED.getBytes(), toClient);
@@ -112,8 +117,7 @@ public class CP1Server {
         }
     }
 
-    private static byte[] receiveAndDecryptFile(DataOutputStream toClient, DataInputStream fromClient,
-                                                PrivateKey privateKey) {
+    private static byte[] receiveAndDecryptFile(DataInputStream fromClient, PrivateKey privateKey) {
         try {
             Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
             cipher.init(Cipher.DECRYPT_MODE, privateKey);
@@ -183,7 +187,7 @@ public class CP1Server {
         int clientNonceLength = fromClient.readInt();
         byte[] clientNonce = new byte[clientNonceLength];
         fromClient.readFully(clientNonce);
-        // System.out.println("Thread " + Thread.currentThread().getId() + " >> CP1Client nonce received.");
+        // System.out.println("Thread " + Thread.currentThread().getId() + " >> Client nonce received.");
 
         /* ENCRYPT NONCE AND SEND BACK */
         // System.out.println("Thread " + Thread.currentThread().getId() + " > Encrypting client nonce...");
@@ -207,7 +211,7 @@ public class CP1Server {
 
         if (!Arrays.equals(reply, APConstants.AUTH_DONE.getBytes())) {
             System.out.println("Thread " + Thread.currentThread().getId() +
-                    " - CP1Client terminated connection.");
+                    " - Client terminated connection.");
             return false;
         }
 
