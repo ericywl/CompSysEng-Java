@@ -99,6 +99,8 @@ public class CP1Server {
             // System.out.println("Thread " + Thread.currentThread().getId() + " >> File received.");
 
             // System.out.println("Thread " + Thread.currentThread().getId() + " > Writing file.");
+            Files.createDirectory(Paths.get("cp1server"));
+            Files.createFile(Paths.get("cp1server", fileName));
             Files.write(Paths.get("server", fileName), fileBytes);
             // System.out.println("Thread " + Thread.currentThread().getId() + " >> File written.");
 
