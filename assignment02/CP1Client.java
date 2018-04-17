@@ -148,7 +148,6 @@ public class CP1Client {
             System.out.println(" > Sending nonce...");
             byte[] clientNonce = generateNonce();
             byte[] encryptedNonceResponse = exchangeNonceWithServer(clientNonce);
-
             System.out.println(" >> Encrypted nonce response received.");
 
             /* REQUEST FOR SIGNED CERTIFICATE */
@@ -157,19 +156,19 @@ public class CP1Client {
             if (serverCert == null)
                 return null;
             System.out.println(" >> Signed certificate received.");
-
-            /* VERIFY SERVER CERTIFICATE AND GET PUBLIC KEY */
-            boolean isVerifiedCert = verifyServerCert(serverCert);
-            if (!isVerifiedCert) {
-                System.out.println("Authentication failed - invalid server certificate.");
-                return null;
-            }
             PublicKey serverKey = serverCert.getPublicKey();
 
             /* VERIFY NONCE */
             byte[] decryptedNonceResponse = decryptNonceResponse(encryptedNonceResponse, serverKey);
             if (!Arrays.equals(clientNonce, decryptedNonceResponse)) {
                 System.out.println("Authentication failed - invalid nonce response.");
+                return null;
+            }
+
+            /* VERIFY SERVER CERTIFICATE */
+            boolean isVerifiedCert = verifyServerCert(serverCert);
+            if (!isVerifiedCert) {
+                System.out.println("Authentication failed - invalid server certificate.");
                 return null;
             }
 
