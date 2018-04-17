@@ -6,7 +6,7 @@ import java.security.*;
 import java.security.cert.*;
 import java.util.Arrays;
 
-public class Client {
+public class CP1Client {
     private static final String CA_CERT_FILE = "files/CA.crt";
     private static final String SERVER_NAME = "localhost";
     private static final Integer SERVER_PORT = 4321;
@@ -34,7 +34,7 @@ public class Client {
         try {
             boolean transferReady = checkMessage(APConstants.TRANSFER_READY);
             if (!transferReady) {
-                System.out.println("Server not ready to receive file.");
+                System.out.println("CP1Server not ready to receive file.");
                 return;
             }
 
@@ -47,7 +47,7 @@ public class Client {
 
             boolean transferAccept = checkMessage(APConstants.TRANSFER_ACCEPT);
             if (!transferAccept) {
-                System.out.println("Server rejected file transfer.");
+                System.out.println("CP1Server rejected file transfer.");
                 return;
             }
 
@@ -57,7 +57,7 @@ public class Client {
 
             boolean transferCont = checkMessage(APConstants.TRANSFER_CONTINUE);
             if (!transferCont) {
-                System.out.println("Server stopped the file transfer.");
+                System.out.println("CP1Server stopped the file transfer.");
                 return;
             }
 
@@ -84,7 +84,7 @@ public class Client {
             }
 
             if (!Arrays.equals(serverMsg, APConstants.TRANSFER_RECEIVED.getBytes())) {
-                System.out.println("Server did not receive the file. Please try again.");
+                System.out.println("CP1Server did not receive the file. Please try again.");
                 return;
             }
 
@@ -173,7 +173,7 @@ public class Client {
                 return null;
             }
 
-            System.out.println("Server is authenticated!");
+            System.out.println("CP1Server is authenticated!");
             writeBytesToServer(APConstants.AUTH_DONE.getBytes());
             return serverKey;
 
@@ -221,7 +221,7 @@ public class Client {
             throw new IOException("Data stream ended prematurely.");
 
         if (Arrays.equals(serverReply, APConstants.TERMINATION_MSG.getBytes())) {
-            System.out.println("Server terminated connection.");
+            System.out.println("CP1Server terminated connection.");
             return null;
         }
 

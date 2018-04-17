@@ -1,4 +1,3 @@
-
 import javax.crypto.Cipher;
 import java.io.*;
 import java.net.ServerSocket;
@@ -16,7 +15,7 @@ import java.util.Arrays;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-public class Server {
+public class CP1Server {
     private static final String PRIVATE_DER_FILE = "files/privateServer.der";
     private static final String SERVER_CERT_FILE = "files/server.crt";
     private static final Integer SERVER_PORT = 4321;
@@ -70,7 +69,7 @@ public class Server {
             // System.out.println("Thread " + Thread.currentThread().getId() + " > Receiving file...");
             boolean transferStart = checkMessage(APConstants.TRANFER_START, fromClient);
             if (!transferStart) {
-                System.out.println("Thread " + Thread.currentThread().getId() + "Client is not transferring file.");
+                System.out.println("Thread " + Thread.currentThread().getId() + "CP1Client is not transferring file.");
                 return;
             }
 
@@ -83,7 +82,7 @@ public class Server {
             boolean transferMDDone = checkMessage(APConstants.TRANSFER_MD_DONE, fromClient);
             if (!transferMDDone) {
                 System.out.println("Thread " + Thread.currentThread().getId()
-                        + "Client stopped transferring the file.");
+                        + "CP1Client stopped transferring the file.");
                 return;
             }
 
@@ -182,7 +181,7 @@ public class Server {
         int clientNonceLength = fromClient.readInt();
         byte[] clientNonce = new byte[clientNonceLength];
         fromClient.readFully(clientNonce);
-        // System.out.println("Thread " + Thread.currentThread().getId() + " >> Client nonce received.");
+        // System.out.println("Thread " + Thread.currentThread().getId() + " >> CP1Client nonce received.");
 
         /* ENCRYPT NONCE AND SEND BACK */
         // System.out.println("Thread " + Thread.currentThread().getId() + " > Encrypting client nonce...");
@@ -206,7 +205,7 @@ public class Server {
 
         if (!Arrays.equals(reply, APConstants.AUTH_DONE.getBytes())) {
             System.out.println("Thread " + Thread.currentThread().getId() +
-                    " - Client terminated connection.");
+                    " - CP1Client terminated connection.");
             return false;
         }
 
@@ -247,7 +246,7 @@ public class Server {
             byte[] serverCertBytes = Files.readAllBytes(Paths.get(SERVER_CERT_FILE));
             writeBytesToClient(serverCertBytes, toClient);
         } catch (FileNotFoundException ex) {
-            System.out.println("Server certificate not found.");
+            System.out.println("CP1Server certificate not found.");
         } catch (Exception e) {
             e.printStackTrace();
         }
