@@ -1,37 +1,92 @@
 import javax.crypto.Cipher;
+import javax.crypto.KeyGenerator;
+import javax.crypto.NoSuchPaddingException;
 import java.io.*;
 import java.net.Socket;
 import java.net.SocketException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.security.*;
-import java.security.cert.*;
+import java.security.cert.CertificateException;
+import java.security.cert.CertificateFactory;
+import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-public class CP1Client {
+public class Client {
     private static final String CA_CERT_FILE = "files/CA.crt";
-    private static final String SERVER_NAME = "localhost";
     private static final Integer SERVER_PORT = 4321;
     private static final Integer BLOCK_SIZE = 117;
+    private static final String IPADDRESS_PATTERN =
+            "^([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])\\." +
+                    "([01]?\\d\\d?|2[0-4]\\d|25[0-5])$";
 
     private static Socket clientSocket;
     private static DataOutputStream toServer = null;
     private static DataInputStream fromServer = null;
 
     public static void main(String[] args) {
+        String IPAddr = args[0];
+        String fileLocation = args[1];
+        String protocol = args[2];
+
+        boolean validIP = checkIP(IPAddr);
+        if (!validIP) {
+            System.out.println("The specified IPv4 address is invalid.");
+            return;
+        }
+
+        boolean fileExists = Files.exists(Paths.get(fileLocation));
+        if (!fileExists) {
+            System.out.println("The specified file does not exist.");
+            return;
+        }
+
+        boolean isFile = Files.isRegularFile(Paths.get(fileLocation));
+        if (!isFile) {
+            System.out.println("The specified path is not a file.");
+            return;
+        }
+
+        if (!protocol.equalsIgnoreCase("cp1") && !protocol.equalsIgnoreCase("cp2")) {
+            System.out.println("Invalid protocol.");
+            return;
+        }
+
         try {
-            connectToServer(SERVER_NAME, SERVER_PORT);
+            connectToServer(IPAddr, SERVER_PORT);
             PublicKey serverKey = authenticateServerAndGetKey();
             if (serverKey == null)
                 terminateConnection();
 
-            transferEncryptedFile("files/rr.txt", serverKey);
+            long start = System.nanoTime();
+            transferFile(fileLocation, serverKey, protocol);
+            long end = System.nanoTime();
+            long duration = end - start;
+            System.out.println("Time taken for file transfer: " + duration + "ns.");
 
+        } catch (IOException e) {
+            e.printStackTrace();
         } finally {
             terminateConnection();
         }
+
+    }
+
+    private static boolean checkIP(String input) {
+        if (input.equals("localhost")) return true;
+
+        Pattern pattern = Pattern.compile(IPADDRESS_PATTERN);
+        Matcher matcher = pattern.matcher(input);
+
+        return matcher.matches();
     }
 
     /* FILE */
-    private static void transferEncryptedFile(String fileLocation, PublicKey serverKey) {
+    private static void transferFile(String fileLocation, PublicKey publicKey, String protocol) {
         try {
             boolean transferReady = checkMessage(APConstants.TRANSFER_READY);
             if (!transferReady) {
@@ -42,23 +97,40 @@ public class CP1Client {
             System.out.println("Transferring file...");
             File file = new File(fileLocation);
 
-            /* SEND TRANSFER START MESSAGE */
+            /* SEND TRANSFER START MESSAGE AND INIT CIPHER */
             System.out.println(" > Sending the file over...");
-            writeBytesToServer(APConstants.TRANSFER_START.getBytes());
+            Key fileEncKey;
+            Cipher cipher;
+            if (protocol.equalsIgnoreCase("cp2")) {
+                writeBytesToServer(APConstants.TRANSFER_START_CP2.getBytes());
+                KeyGenerator keyGen = KeyGenerator.getInstance("AES");
+                keyGen.init(128);
+                fileEncKey = keyGen.generateKey();
+                cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
 
+                sendEncryptedAesKey(fileEncKey, publicKey);
+            } else if (protocol.equalsIgnoreCase("cp1")) {
+                writeBytesToServer(APConstants.TRANSFER_START_CP1.getBytes());
+                fileEncKey = publicKey;
+                cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+
+            } else {
+                throw new IllegalArgumentException("Invalid protocol.");
+            }
+
+            cipher.init(Cipher.ENCRYPT_MODE, fileEncKey);
             boolean transferAccept = checkMessage(APConstants.TRANSFER_ACCEPT);
             if (!transferAccept) {
-                System.out.println("Server rejected file transfer.");
+                System.out.println("Error! Server rejected file transfer.");
                 return;
             }
 
-            /* SEND FILE NAME */
-            toServer.writeUTF(file.getName());
-            toServer.flush();
-
+            /* SEND ENCRYPTED FILE NAME */
+            sendEncryptedFileBytes(file.getName().getBytes(), cipher);
+            writeBytesToServer(APConstants.TRANSFER_NAME_DONE.getBytes());
             boolean transferCont = checkMessage(APConstants.TRANSFER_CONTINUE);
             if (!transferCont) {
-                System.out.println("Server stopped the file transfer.");
+                System.out.println("Error! Server stopped the file transfer.");
                 return;
             }
 
@@ -70,43 +142,54 @@ public class CP1Client {
                 throw new IOException("Input stream ended prematurely.");
             bis.close();
 
-            sendEncryptedMessageDigest(fileBytes, serverKey);
+            sendEncryptedFileBytes(fileBytes, cipher);
+            writeBytesToServer(APConstants.TRANSFER_FILE_DONE.getBytes());
+            sendEncryptedMessageDigest(fileBytes, cipher);
             writeBytesToServer(APConstants.TRANSFER_MD_DONE.getBytes());
-            sendEncryptedFileBytes(fileBytes, serverKey);
-            writeBytesToServer(APConstants.TRANSFER_DONE.getBytes());
 
             int length = fromServer.readInt();
             byte[] serverMsg = new byte[length];
             fromServer.readFully(serverMsg);
 
             if (Arrays.equals(serverMsg, APConstants.FILE_PROBLEM.getBytes())) {
-                System.out.println("File is corrupted during transfer. Please try again.");
+                System.out.println("Error! File is corrupted during transfer. Please try again.");
                 return;
             }
 
             if (!Arrays.equals(serverMsg, APConstants.TRANSFER_RECEIVED.getBytes())) {
-                System.out.println("Server did not receive the file. Please try again.");
+                System.out.println("Error! Server did not receive the file. Please try again.");
                 return;
             }
 
             System.out.println(" >> File sent.");
             System.out.println("File transfer complete!");
 
-        } catch (IOException e) {
+        } catch (IOException | NoSuchAlgorithmException | NoSuchPaddingException | InvalidKeyException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static void sendEncryptedAesKey(Key aesKey, PublicKey publicKey) {
+        try {
+            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
+            cipher.init(Cipher.ENCRYPT_MODE, publicKey);
+
+            byte[] aesKeyBytes = aesKey.getEncoded();
+            byte[] encryptedAesKeyBytes = cipher.doFinal(aesKeyBytes);
+            writeBytesToServer(encryptedAesKeyBytes);
+
+        } catch (Exception e) {
             e.printStackTrace();
         }
     }
 
     /**
      * Split the file bytes into blocks, encrypt them and send to server
+     *
      * @param fileBytes the file bytes to be split
-     * @param serverKey the key to use for encryption
      */
-    private static void sendEncryptedFileBytes(byte[] fileBytes, PublicKey serverKey) {
+    private static void sendEncryptedFileBytes(byte[] fileBytes, Cipher cipher) {
         try {
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, serverKey);
-
             for (int start = 0, end; start < fileBytes.length; start += BLOCK_SIZE) {
                 end = Math.min(start + BLOCK_SIZE, fileBytes.length);
                 byte[] tempBlockBuffer = cipher.doFinal(fileBytes, start, end - start);
@@ -120,19 +203,17 @@ public class CP1Client {
 
     /**
      * Compute the message digest, encrypt it and send it to the server
+     *
      * @param fileBytes the file bytes used to compute the digest
-     * @param serverKey the key to use for encryption
      */
-    private static void sendEncryptedMessageDigest(byte[] fileBytes, PublicKey serverKey) {
+    private static void sendEncryptedMessageDigest(byte[] fileBytes, Cipher cipher) {
         try {
             MessageDigest md = MessageDigest.getInstance("MD5");
             md.update(fileBytes);
-            byte[] digest = md.digest();
+            byte[] digestBytes = md.digest();
 
-            Cipher cipher = Cipher.getInstance("RSA/ECB/PKCS1Padding");
-            cipher.init(Cipher.ENCRYPT_MODE, serverKey);
-            byte[] encryptedDigest = cipher.doFinal(digest);
-            writeBytesToServer(encryptedDigest);
+            byte[] encryptedDigestBytes = cipher.doFinal(digestBytes);
+            writeBytesToServer(encryptedDigestBytes);
 
         } catch (Exception e) {
             e.printStackTrace();
@@ -140,47 +221,39 @@ public class CP1Client {
     }
 
     /* AUTH */
-    private static PublicKey authenticateServerAndGetKey() {
+    private static PublicKey authenticateServerAndGetKey() throws IOException {
         System.out.println("Authenticating server...");
+        /* SEND NONCE */
+        System.out.println(" > Sending nonce...");
+        byte[] clientNonce = generateNonce();
+        byte[] encryptedNonceResponse = exchangeNonceWithServer(clientNonce);
+        System.out.println(" >> Encrypted nonce response received.");
 
-        try {
-            /* SEND NONCE */
-            System.out.println(" > Sending nonce...");
-            byte[] clientNonce = generateNonce();
-            byte[] encryptedNonceResponse = exchangeNonceWithServer(clientNonce);
-            System.out.println(" >> Encrypted nonce response received.");
+        /* REQUEST FOR SIGNED CERTIFICATE */
+        System.out.println(" > Requesting signed certificate...");
+        X509Certificate serverCert = retrieveSignedCert();
+        if (serverCert == null)
+            return null;
+        System.out.println(" >> Signed certificate received.");
+        PublicKey serverKey = serverCert.getPublicKey();
 
-            /* REQUEST FOR SIGNED CERTIFICATE */
-            System.out.println(" > Requesting signed certificate...");
-            X509Certificate serverCert = retrieveSignedCert();
-            if (serverCert == null)
-                return null;
-            System.out.println(" >> Signed certificate received.");
-            PublicKey serverKey = serverCert.getPublicKey();
-
-            /* VERIFY NONCE */
-            byte[] decryptedNonceResponse = decryptNonceResponse(encryptedNonceResponse, serverKey);
-            if (!Arrays.equals(clientNonce, decryptedNonceResponse)) {
-                System.out.println("Authentication failed - invalid nonce response.");
-                return null;
-            }
-
-            /* VERIFY SERVER CERTIFICATE */
-            boolean isVerifiedCert = verifyServerCert(serverCert);
-            if (!isVerifiedCert) {
-                System.out.println("Authentication failed - invalid server certificate.");
-                return null;
-            }
-
-            System.out.println("Server is authenticated!");
-            writeBytesToServer(APConstants.AUTH_DONE.getBytes());
-            return serverKey;
-
-        } catch (IOException e) {
-            e.printStackTrace();
+        /* VERIFY NONCE */
+        byte[] decryptedNonceResponse = decryptNonceResponse(encryptedNonceResponse, serverKey);
+        if (!Arrays.equals(clientNonce, decryptedNonceResponse)) {
+            System.out.println("Error! Authentication failed - invalid nonce response.");
+            return null;
         }
 
-        return null;
+        /* VERIFY SERVER CERTIFICATE */
+        boolean isVerifiedCert = verifyServerCert(serverCert);
+        if (!isVerifiedCert) {
+            System.out.println("Error! Authentication failed - invalid server certificate.");
+            return null;
+        }
+
+        System.out.println("Server is authenticated!");
+        writeBytesToServer(APConstants.AUTH_DONE.getBytes());
+        return serverKey;
     }
 
     /**
@@ -215,12 +288,10 @@ public class CP1Client {
 
         int replySize = fromServer.readInt();
         byte[] serverReply = new byte[replySize];
-        int bytesRead = fromServer.read(serverReply);
-        if (bytesRead < 0)
-            throw new IOException("Data stream ended prematurely.");
+        fromServer.readFully(serverReply);
 
         if (Arrays.equals(serverReply, APConstants.TERMINATION_MSG.getBytes())) {
-            System.out.println("Server terminated connection.");
+            System.out.println("Error! Server terminated connection.");
             return null;
         }
 
@@ -296,7 +367,6 @@ public class CP1Client {
 
         } catch (NoSuchAlgorithmException e) {
             e.printStackTrace();
-
         }
 
         return null;
@@ -321,18 +391,19 @@ public class CP1Client {
         }
     }
 
-    private static void connectToServer(String serverName, int serverPort) {
+    private static void connectToServer(String serverName, int serverPort) throws IOException {
         System.out.println("Connecting to " + serverName + ":" + serverPort + "...");
 
-        try {
-            clientSocket = new Socket(serverName, serverPort);
-            toServer = new DataOutputStream(clientSocket.getOutputStream());
-            fromServer = new DataInputStream(clientSocket.getInputStream());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        clientSocket = new Socket(serverName, serverPort);
+        toServer = new DataOutputStream(clientSocket.getOutputStream());
+        fromServer = new DataInputStream(clientSocket.getInputStream());
     }
 
+    /**
+     * Send the byte array size and the byte to the server
+     *
+     * @param array the array of bytes to write
+     */
     private static void writeBytesToServer(byte[] array) throws IOException {
         toServer.writeInt(array.length);
         toServer.flush();
@@ -340,6 +411,12 @@ public class CP1Client {
         toServer.flush();
     }
 
+    /**
+     * Check that the received message is equal to the specified message
+     *
+     * @param message the message to be compared with
+     * @return true if equal, else false
+     */
     private static boolean checkMessage(String message) throws IOException {
         int length = fromServer.readInt();
         byte[] serverMsg = new byte[length];
