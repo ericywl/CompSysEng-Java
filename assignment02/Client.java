@@ -59,8 +59,9 @@ public class Client {
         try {
             connectToServer(IPAddr, SERVER_PORT);
             PublicKey serverKey = authenticateServerAndGetKey();
-            if (serverKey == null)
-                terminateConnection();
+            if (serverKey == null) {
+                return;
+            }
 
             long start = System.nanoTime();
             transferFile(fileLocation, serverKey, protocol);
@@ -300,7 +301,7 @@ public class Client {
             ByteArrayInputStream bins = new ByteArrayInputStream(serverReply);
             return (X509Certificate) certFac.generateCertificate(bins);
         } catch (CertificateException e) {
-            e.printStackTrace();
+            System.out.println("Error! Invalid server certifcate.");
         }
 
         return null;
